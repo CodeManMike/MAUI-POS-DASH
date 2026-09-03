@@ -1,0 +1,28 @@
+@page "/shift/close"
+
+<PageTitle>Close Shift</PageTitle>
+
+<h1>Close Shift</h1>
+
+<label>
+    Cash counted
+    <input type="number" step="0.01" @bind="_cashCounted" class="mock-input" />
+</label>
+
+<button class="mock-button" @onclick="CloseShift">Close Shift</button>
+
+@if (_message is not null)
+{
+    <p>@_message</p>
+}
+
+@code {
+    private decimal _cashCounted;
+    private string? _message;
+
+    private void CloseShift()
+    {
+        // Same story as ShiftOpen — proves the page, not the business logic behind it yet.
+        _message = $"Would close the shift with {_cashCounted:C} counted.";
+    }
+}

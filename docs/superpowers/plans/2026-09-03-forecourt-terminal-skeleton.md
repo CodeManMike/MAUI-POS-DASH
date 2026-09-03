@@ -2261,6 +2261,11 @@ Create the other three with these exact substitutions (route, title, heading, an
 
 - [ ] **Step 6: Build**
 
+**Dependency note:** `_Imports.razor` above adds `@using MAUI_POS_DASH.Shared.Components`, which
+doesn't exist until Task 13 creates `MAUI-POS-DASH.Shared/Components/*`. Do Task 13 before this
+build step (build/commit Task 13 first, then come back and build/commit this one) — that way both
+tasks land as individually-buildable commits instead of one broken intermediate commit.
+
 ```bash
 dotnet build MAUI-POS-DASH/MAUI-POS-DASH.csproj -f net10.0-android
 ```
