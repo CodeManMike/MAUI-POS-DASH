@@ -611,10 +611,12 @@ namespace MAUI_POS_DASH.Core.Contracts;
 public partial class EntityMapper
 {
     #region Attendant
+    [MapperIgnoreSource(nameof(Attendant.PinHash))]
     public partial AttendantDto ToDto(Attendant attendant);
     #endregion
 
     #region Shift
+    [MapperIgnoreSource(nameof(Shift.Till))]
     public partial ShiftDto ToDto(Shift shift);
     #endregion
 
@@ -623,12 +625,14 @@ public partial class EntityMapper
     #endregion
 
     #region Sale
+    [MapperIgnoreSource(nameof(SaleLine.SaleId))]
     public partial SaleLineDto ToDto(SaleLine line);
 
     public partial SaleDto ToDto(Sale sale);
     #endregion
 
     #region Transaction
+    [MapperIgnoreSource(nameof(Transaction.Sale))]
     public partial TransactionDto ToDto(Transaction transaction);
     #endregion
 }
@@ -640,7 +644,7 @@ public partial class EntityMapper
 dotnet build MAUI-POS-DASH.Core/MAUI-POS-DASH.Core.csproj
 ```
 
-Expected: `Build succeeded.` If it instead reports an unmapped-member diagnostic (e.g. `RMG012`), the mismatch is almost always `ShiftDto.AttendantName` — confirm `Attendant.Name` exists and re-run; Mapperly's flattening convention matches `Attendant.Name` to `AttendantName` by name concatenation automatically.
+Expected: `Build succeeded.` with 0 warnings — the `[MapperIgnoreSource]` attributes above declare, on purpose, the four source members that don't have a DTO counterpart (`PinHash` never leaves Core; `Shift.Till`/`Transaction.Sale` navigations are exposed as their own DTOs rather than nested; `SaleLine.SaleId` is redundant once nested under `SaleDto`). Without them Mapperly still generates working code, just with `RMG020` "unmapped source member" warnings — if you see one for a member not in this list, that's a real gap, not an expected one. If it instead reports an unmapped-*target*-member diagnostic (e.g. `RMG012`) on `ShiftDto.AttendantName`, confirm `Attendant.Name` exists and re-run; Mapperly's flattening convention matches `Attendant.Name` to `AttendantName` by name concatenation automatically.
 
 - [ ] **Step 4: Commit**
 
