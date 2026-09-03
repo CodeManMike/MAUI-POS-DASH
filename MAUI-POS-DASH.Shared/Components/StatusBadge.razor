@@ -1,0 +1,6 @@
+<span class="status-badge status-badge--@Status.ToLowerInvariant()">@Status</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public required string Status { get; set; }
+}

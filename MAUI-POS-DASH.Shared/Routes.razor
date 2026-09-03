@@ -1,6 +1,18 @@
-﻿<Router AppAssembly="typeof(Layout.MainLayout).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+@using System.Reflection
+
+<Router AppAssembly="typeof(Layout.MainLayout).Assembly" AdditionalAssemblies="AdditionalAssemblies" NotFoundPage="typeof(Pages.NotFound)">
     <Found Context="routeData">
         <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
 </Router>
+
+@code {
+    /// <summary>
+    /// We accept extra assemblies to scan for routable pages so each host can contribute its own
+    /// pages (the Web app's dashboard pages live in .Web.Client) without Shared needing to
+    /// reference them directly — that would be a circular project reference.
+    /// </summary>
+    [Parameter]
+    public IEnumerable<Assembly>? AdditionalAssemblies { get; set; }
+}

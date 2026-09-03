@@ -36,3 +36,101 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+.status-badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge--open, .status-badge--synced, .status-badge--success {
+    background: #d7f5e3;
+    color: #1c7c46;
+}
+
+.status-badge--closed, .status-badge--pending {
+    background: #fff2cc;
+    color: #8a6d00;
+}
+
+.status-badge--failed {
+    background: #fbdada;
+    color: #a31515;
+}
+
+.currency-text {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.shift-summary-card, .transaction-row {
+    border: 1px solid #e2e2e2;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.shift-summary-card__header, .transaction-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.terminal-shell__status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    background: #1b1b2f;
+    color: white;
+}
+
+.terminal-shell__body {
+    padding: 1.25rem;
+}
+
+.module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+}
+
+.module-tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100px;
+    border-radius: 12px;
+    background: #f0f0f5;
+    color: #1b1b2f;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.mock-input, .mock-button {
+    display: block;
+    margin: 0.5rem 0;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.mock-button {
+    background: #1b1b2f;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.dashboard-shell__header {
+    padding: 0.75rem 1.25rem;
+    background: #14213d;
+    color: white;
+}
+
+.dashboard-shell__body {
+    padding: 1.25rem;
+}
