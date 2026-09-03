@@ -803,6 +803,9 @@ public interface IShiftRepository
 ```csharp
 namespace MAUI_POS_DASH.Core.Shifts;
 
+/// <summary>
+/// We own the shift lifecycle — opening a shift for an attendant and closing it out again.
+/// </summary>
 public class ShiftService
 {
     #region Fields
@@ -868,6 +871,9 @@ namespace MAUI_POS_DASH.Core.Shifts;
 
 public record ReconciliationResult(decimal ExpectedCash, decimal CountedCash, decimal Variance, bool WithinTolerance);
 
+/// <summary>
+/// We compare a till's recorded totals against what an attendant physically counted at close-out.
+/// </summary>
 public class TillReconciliationService
 {
     #region Fields
@@ -942,6 +948,10 @@ public interface ITransactionQueueStore
 ```csharp
 namespace MAUI_POS_DASH.Core.Sync;
 
+/// <summary>
+/// We hold transactions that have been saved locally but not yet confirmed by the back office,
+/// and periodically try to flush them once connectivity allows.
+/// </summary>
 public class OfflineTransactionQueue
 {
     #region Fields
