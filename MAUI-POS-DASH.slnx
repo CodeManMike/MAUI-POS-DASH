@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="MAUI-POS-DASH.Shared/MAUI-POS-DASH.Shared.csproj" />
+  <Project Path="MAUI-POS-DASH.Web.Client/MAUI-POS-DASH.Web.Client.csproj" />
+  <Project Path="MAUI-POS-DASH.Web/MAUI-POS-DASH.Web.csproj" />
+  <Project Path="MAUI-POS-DASH/MAUI-POS-DASH.csproj" />
+</Solution>
