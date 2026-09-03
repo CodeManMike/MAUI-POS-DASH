@@ -46,3 +46,18 @@ the work, so two contributors don't pick the same module at the same time.
 be referenced by `MAUI-POS-DASH.Web.Client` (it would pull EF Core/Npgsql into the browser
 bundle). If a change seems to require breaking either rule, stop and raise it rather than
 routing around it.
+
+## Two framework gotchas found the hard way (both in `MAUI-POS-DASH.Web`)
+
+- **Never return a bare status code from a Minimal API endpoint.** `Results.StatusCode(...)` /
+  `TypedResults.StatusCode(...)` produces an empty-bodied 4xx/5xx response, which
+  `UseStatusCodePagesWithReExecute("/not-found", ...)` (`Program.cs`) intercepts and re-executes
+  against `/not-found` — replaying the original request, POST body and all. That re-execution
+  hits a Razor Component endpoint, which tries to read the body as a form post and throws on a
+  JSON body. Always return something with an actual response body for error statuses —
+  `TypedResults.Problem(statusCode: ..., detail: ...)` is the standard choice.
+- **A component passed `@rendermode` can only take JSON-serializable parameters.** Blazor
+  serializes every parameter on such a component for the server↔client interactive-resume
+  handoff. Don't pass a `System.Reflection.Assembly` (or anything else non-serializable) as a
+  `[Parameter]` into one — hardcode it as a literal expression inside the component instead (see
+  `MAUI-POS-DASH.Web/Components/AppRoutes.razor`).

@@ -2547,6 +2547,17 @@ resolve (`CS1061`). MAUI's `MauiProgram.cs` doesn't hit this because it has its 
 
 - [ ] **Step 2: Write the stub sync endpoint**
 
+**Framework gotcha found during Task 17's browser verification, fixed here directly:** an
+endpoint that returns a bare status code with no body (`Results.StatusCode(...)` or
+`TypedResults.StatusCode(...)`) gets intercepted by `UseStatusCodePagesWithReExecute("/not-found",
+...)` in `Program.cs` — that middleware re-executes any *empty-bodied* 4xx/5xx response against
+`/not-found`, replaying the original request including its POST body. The re-executed request then
+hits the Blazor "not found" Razor Component, which tries to read the body as a form post and
+throws `InvalidOperationException: Incorrect Content-Type` on a JSON body. **Fix: always return a
+response with an actual body for error statuses — `TypedResults.Problem(...)` (RFC 9110 Problem
+Details), not a bare status code.** This applies to every endpoint in this app, not just this one
+— it's called out in `AGENTS.md`.
+
 `MAUI-POS-DASH.Web/Api/TransactionsApi.cs`:
 
 ```csharp
@@ -2565,8 +2576,16 @@ public static class TransactionsApi
         app.MapPost("/api/transactions", (List<TransactionDto> transactions) =>
         {
             // TODO(Builder): persist these to BackofficeDbContext and return per-transaction results.
-            return Results.StatusCode(StatusCodes.Status501NotImplemented);
-        });
+            // We return a Problem body rather than a bare status code — an empty-bodied 4xx/5xx
+            // response gets intercepted by UseStatusCodePagesWithReExecute (see Program.cs) and
+            // re-executed against /not-found with this request's original POST body still
+            // attached, which then fails trying to parse it as a form post instead of JSON.
+            return TypedResults.Problem(statusCode: StatusCodes.Status501NotImplemented, detail: "Transaction sync is not implemented yet.");
+        })
+        // We disable antiforgery here on purpose — this endpoint is called by the MAUI terminal's
+        // plain HttpClient, which has no browser session to carry an antiforgery token in the
+        // first place. CSRF protection doesn't apply to a machine-to-machine sync call.
+        .DisableAntiforgery();
 
         return app;
     }
@@ -3050,8 +3069,11 @@ dotnet ef database update --project MAUI-POS-DASH.Core.Persistence --context Bac
 curl -i -X POST https://localhost:7135/api/transactions -H "Content-Type: application/json" -d "[]"
 ```
 
-Expected: `501 Not Implemented` (confirms the endpoint is reachable and the DTO shape
-deserializes — the 501 is the intended stub response, not a failure).
+Expected: `501 Not Implemented` with an `application/problem+json` body (confirms the endpoint is
+reachable and the DTO shape deserializes — the 501 is the intended stub response, not a failure).
+If Docker's daemon isn't actually running (`docker run` fails with a connection error to the
+Docker API), skip the live-migration part — the endpoint check above doesn't need Postgres
+reachable at all, since `AddDbContext` registration doesn't eagerly connect.
 
 - [ ] **Step 5: Stop the Web app, final status check**
 
