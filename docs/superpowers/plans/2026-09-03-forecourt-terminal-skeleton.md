@@ -1423,7 +1423,7 @@ git commit -m "Add EF Core DbContexts, entity configurations, and repositories"
 ## Task 8: Design-time factories, dotnet-ef tool, and initial migrations
 
 **Files:**
-- Create: `.config/dotnet-tools.json`
+- Create: `dotnet-tools.json` (path as created by this SDK's `dotnet new tool-manifest` — older SDKs use `.config/dotnet-tools.json`)
 - Create: `MAUI-POS-DASH.Core.Persistence/DesignTime/TerminalDbContextFactory.cs`
 - Create: `MAUI-POS-DASH.Core.Persistence/DesignTime/BackofficeDbContextFactory.cs`
 - Create (generated): `MAUI-POS-DASH.Core.Persistence/Migrations/Terminal/*`
@@ -1436,7 +1436,7 @@ dotnet new tool-manifest
 dotnet tool install dotnet-ef --version 10.0.11
 ```
 
-Expected: creates `.config/dotnet-tools.json`, committed so `dotnet tool restore` gives Overmind, Builder, and Architect the identical `dotnet-ef` version.
+Expected: creates a tool manifest (this SDK puts it at repo-root `dotnet-tools.json`), committed so `dotnet tool restore` gives Overmind, Builder, and Architect the identical `dotnet-ef` version.
 
 - [ ] **Step 2: Write the design-time factories**
 
@@ -1520,8 +1520,12 @@ docker stop mauiposdash-devpg
 
 - [ ] **Step 5: Commit**
 
+Note: this SDK's `dotnet new tool-manifest` places the manifest at the repo root
+(`dotnet-tools.json`), not under `.config/` as older SDKs did — commit whichever path it actually
+created.
+
 ```bash
-git add .config/dotnet-tools.json MAUI-POS-DASH.Core.Persistence/DesignTime MAUI-POS-DASH.Core.Persistence/Migrations
+git add dotnet-tools.json MAUI-POS-DASH.Core.Persistence/DesignTime MAUI-POS-DASH.Core.Persistence/Migrations
 git commit -m "Add design-time DbContext factories and initial EF Core migrations"
 ```
 
