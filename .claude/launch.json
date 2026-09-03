@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web-dashboard",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "MAUI-POS-DASH.Web"],
+      "port": 5075,
+      "url": "http://localhost:5075"
+    }
+  ]
+}

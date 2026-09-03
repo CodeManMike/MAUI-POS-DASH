@@ -2288,7 +2288,7 @@ git commit -m "Add MAUI terminal shell: routing, layout, and placeholder pages"
 - Create: `MAUI-POS-DASH.Shared/Components/CurrencyText.razor`
 - Create: `MAUI-POS-DASH.Shared/Components/ShiftSummaryCard.razor`
 - Create: `MAUI-POS-DASH.Shared/Components/TransactionRow.razor`
-- Modify: `MAUI-POS-DASH.Shared/Routes.razor`
+- Delete: `MAUI-POS-DASH.Shared/Routes.razor` (superseded by `MAUI-POS-DASH.Web/Components/AppRoutes.razor` in Task 14 — see Step 3 below)
 - Modify: `MAUI-POS-DASH.Shared/wwwroot/app.css`
 - Delete: `MAUI-POS-DASH.Shared/Pages/Home.razor`
 
@@ -2364,29 +2364,25 @@ git commit -m "Add MAUI terminal shell: routing, layout, and placeholder pages"
 }
 ```
 
-- [ ] **Step 3: Parameterize `Routes.razor` so Web can route to `.Web.Client` pages, and drop the stock Home page**
+- [ ] **Step 3: Delete `Routes.razor` and the stock Home page — Shared no longer routes anything**
 
-`MAUI-POS-DASH.Shared/Routes.razor`:
+**Revised during Task 17's browser verification:** the original version of this step gave
+`Shared/Routes.razor` an `AdditionalAssemblies` parameter so Web could pass in `.Web.Client`'s
+assembly. That breaks at runtime — Blazor requires every parameter passed into a component that
+carries `@rendermode` to be JSON-serializable (for the server↔client interactive-resume handoff),
+and `System.Reflection.Assembly` isn't (`NotSupportedException: ... 'System.Reflection.TypeInfo'
+... Path: $.ParameterValues.DefinedTypes`, thrown the moment the page renders). The stock
+`<Routes @rendermode="InteractiveAuto" />` never hit this because it took zero parameters.
 
-```razor
-@using System.Reflection
+The fix (see Task 14 Step 3a): Web gets its **own** router, `MAUI-POS-DASH.Web/Components/AppRoutes.razor`,
+which hardcodes `AppAssembly="typeof(MAUI_POS_DASH.Web.Client._Imports).Assembly"` as a literal
+expression evaluated inside the component — not a parameter crossing the render-mode boundary.
+With MAUI already using its own local `Routes.razor` (Task 12) and Web now using its own
+`AppRoutes.razor`, Shared's `Routes.razor` has no remaining caller — delete it along with the
+stock Home page:
 
-<Router AppAssembly="typeof(Layout.MainLayout).Assembly" AdditionalAssemblies="AdditionalAssemblies" NotFoundPage="typeof(Pages.NotFound)">
-    <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
-    </Found>
-</Router>
-
-@code {
-    /// <summary>
-    /// We accept extra assemblies to scan for routable pages so each host can contribute its own
-    /// pages (the Web app's dashboard pages live in .Web.Client) without Shared needing to
-    /// reference them directly — that would be a circular project reference.
-    /// </summary>
-    [Parameter]
-    public IEnumerable<Assembly>? AdditionalAssemblies { get; set; }
-}
+```bash
+rm MAUI-POS-DASH.Shared/Routes.razor
 ```
 
 ```bash
@@ -2522,9 +2518,16 @@ git commit -m "Add shared UI components, parameterize Routes for multi-host rout
 **Files:**
 - Create: `MAUI-POS-DASH.Web/GlobalUsings.cs`
 - Create: `MAUI-POS-DASH.Web/Api/TransactionsApi.cs`
+- Create: `MAUI-POS-DASH.Web/Components/AppRoutes.razor`
 - Modify: `MAUI-POS-DASH.Web/Program.cs`
 - Modify: `MAUI-POS-DASH.Web/Components/App.razor`
 - Modify: `MAUI-POS-DASH.Web/appsettings.Development.json`
+
+**Dependency note:** Step 3a's `AppRoutes.razor` references
+`MAUI_POS_DASH.Web.Client.Layout.DashboardLayout`, which doesn't exist until Task 15 creates it —
+the same kind of forward-reference as Task 12/13. Do Task 15 before building/committing this
+task's `AppRoutes.razor` change (build/commit the rest of Task 14 first if you want, then Task 15,
+then come back for Step 3a — or just do Tasks 14 and 15 as one combined pass).
 
 - [ ] **Step 1: Add GlobalUsings**
 
@@ -2625,15 +2628,33 @@ internal class Program
 }
 ```
 
-- [ ] **Step 4: Pass `.Web.Client`'s assembly into `Routes`' new `AdditionalAssemblies` parameter**
+- [ ] **Step 3a: Give Web its own router (`AppRoutes.razor`), then point `App.razor` at it**
+
+See the note in Task 13 Step 3 — passing `.Web.Client`'s assembly in as an `AdditionalAssemblies`
+*parameter* breaks Blazor's render-mode-boundary serialization. Instead, `AppRoutes.razor`
+hardcodes the assembly reference as a literal expression, so nothing unserializable ever crosses
+the `@rendermode` boundary:
+
+`MAUI-POS-DASH.Web/Components/AppRoutes.razor`:
+
+```razor
+<Router AppAssembly="typeof(MAUI_POS_DASH.Web.Client._Imports).Assembly" NotFoundPage="typeof(MAUI_POS_DASH.Shared.Pages.NotFound)">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(MAUI_POS_DASH.Web.Client.Layout.DashboardLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+</Router>
+```
 
 `MAUI-POS-DASH.Web/Components/App.razor` — change the `<Routes ... />` line:
 
 ```razor
-    <Routes @rendermode="InteractiveAuto" AdditionalAssemblies="new[] { typeof(MAUI_POS_DASH.Web.Client._Imports).Assembly }" />
+    <AppRoutes @rendermode="InteractiveAuto" />
 ```
 
-(Everything else in `App.razor` stays as-is.)
+(Everything else in `App.razor` stays as-is. Note: `AppRoutes` deliberately isn't named `Routes` —
+`_Imports.razor` still has `@using MAUI_POS_DASH.Shared` in scope for `Layout`/`Pages` references,
+and a same-named `Routes` type in a second namespace would be an ambiguous tag reference.)
 
 - [ ] **Step 5: Add the local-dev Postgres connection string**
 
