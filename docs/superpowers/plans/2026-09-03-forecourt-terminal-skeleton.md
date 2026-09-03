@@ -2531,9 +2531,16 @@ git commit -m "Add shared UI components, parameterize Routes for multi-host rout
 `MAUI-POS-DASH.Web/GlobalUsings.cs`:
 
 ```csharp
+global using Microsoft.EntityFrameworkCore;
 global using MAUI_POS_DASH.Core.Contracts;
 global using MAUI_POS_DASH.Core.Persistence;
 ```
+
+Note the explicit `Microsoft.EntityFrameworkCore` entry: the Web SDK's own implicit usings cover
+`Microsoft.Extensions.DependencyInjection` (so `AddDbContext` resolves on its own), but not
+`Microsoft.EntityFrameworkCore` itself — without this line, `UseNpgsql` in Step 3 below won't
+resolve (`CS1061`). MAUI's `MauiProgram.cs` doesn't hit this because it has its own explicit
+`using Microsoft.EntityFrameworkCore;` at the top of the file.
 
 - [ ] **Step 2: Write the stub sync endpoint**
 

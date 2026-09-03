@@ -1,3 +1,4 @@
+using MAUI_POS_DASH.Web.Api;
 using MAUI_POS_DASH.Web.Components;
 
 internal class Program
@@ -10,6 +11,10 @@ internal class Program
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents()
             .AddInteractiveWebAssemblyComponents();
+
+        builder.Services.AddDbContext<BackofficeDbContext>(options =>
+            options.UseNpgsql(builder.Configuration.GetConnectionString("Backoffice")
+                ?? "Host=localhost;Database=mauiposdash_dev;Username=postgres;Password=postgres"));
 
         var app = builder.Build();
 
@@ -30,6 +35,7 @@ internal class Program
         app.UseAntiforgery();
 
         app.MapStaticAssets();
+        app.MapTransactionsApi();
 
         app.MapRazorComponents<App>()
             .AddInteractiveServerRenderMode()
