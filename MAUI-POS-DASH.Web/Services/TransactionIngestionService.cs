@@ -57,25 +57,66 @@ public class TransactionIngestionService : ITransactionIngestionService
                 "One or more referenced sales do not exist.");
         }
 
-        DateTimeOffset serverTimestamp = _timeProvider.GetUtcNow();
-        List<Transaction> entities = transactions.Select(transaction => new Transaction
+        Guid[] requestedTransactionIds = transactions
+            .Select(transaction => transaction.Id)
+            .ToArray();
+        Dictionary<Guid, Transaction> existingTransactions = await _dbContext.Transactions
+            .Where(transaction => requestedTransactionIds.Contains(transaction.Id))
+            .ToDictionaryAsync(transaction => transaction.Id, cancellationToken);
+        Guid[] conflictingTransactionIds = transactions
+            .Where(transaction => existingTransactions.TryGetValue(transaction.Id, out Transaction? existing)
+                && !MatchesImmutableFields(transaction, existing))
+            .Select(transaction => transaction.Id)
+            .Order()
+            .ToArray();
+
+        if (conflictingTransactionIds.Length > 0)
         {
-            Id = transaction.Id,
-            SaleId = transaction.SaleId,
-            Method = transaction.Method,
-            Amount = transaction.Amount,
-            Status = TransactionStatus.Synced,
-            CreatedAt = transaction.CreatedAt.ToUniversalTime(),
-            SyncedAt = serverTimestamp
-        }).ToList();
+            return Failure(
+                TransactionIngestionStatus.TransactionConflict,
+                conflictingTransactionIds,
+                "One or more transaction IDs already contain different values.");
+        }
 
-        _dbContext.Transactions.AddRange(entities);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        DateTimeOffset serverTimestamp = _timeProvider.GetUtcNow();
+        List<Transaction> newEntities = [];
+        List<TransactionIngestionItemResult> itemResults = new(transactions.Count);
 
-        return Success(entities.Select(entity => new TransactionIngestionItemResult(
-            entity.Id,
-            TransactionIngestionItemStatus.Inserted,
-            entity.SyncedAt)).ToArray());
+        foreach (TransactionDto transaction in transactions)
+        {
+            if (existingTransactions.TryGetValue(transaction.Id, out Transaction? existing))
+            {
+                itemResults.Add(new TransactionIngestionItemResult(
+                    transaction.Id,
+                    TransactionIngestionItemStatus.AlreadySynced,
+                    existing.SyncedAt));
+                continue;
+            }
+
+            var entity = new Transaction
+            {
+                Id = transaction.Id,
+                SaleId = transaction.SaleId,
+                Method = transaction.Method,
+                Amount = transaction.Amount,
+                Status = TransactionStatus.Synced,
+                CreatedAt = transaction.CreatedAt.ToUniversalTime(),
+                SyncedAt = serverTimestamp
+            };
+            newEntities.Add(entity);
+            itemResults.Add(new TransactionIngestionItemResult(
+                entity.Id,
+                TransactionIngestionItemStatus.Inserted,
+                entity.SyncedAt));
+        }
+
+        if (newEntities.Count > 0)
+        {
+            _dbContext.Transactions.AddRange(newEntities);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return Success(itemResults);
     }
     #endregion
 
@@ -112,6 +153,14 @@ public class TransactionIngestionService : ITransactionIngestionService
         }
 
         return null;
+    }
+
+    private static bool MatchesImmutableFields(TransactionDto requested, Transaction existing)
+    {
+        return requested.SaleId == existing.SaleId
+            && requested.Method == existing.Method
+            && requested.Amount == existing.Amount
+            && requested.CreatedAt.ToUniversalTime() == existing.CreatedAt.ToUniversalTime();
     }
 
     private static TransactionIngestionResult Success(

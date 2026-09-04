@@ -247,6 +247,118 @@ public class TransactionIngestionServiceTests
         });
         #endregion
     }
+
+    [Test]
+    public async Task IngestAsync_IdenticalRetry_ReturnsAlreadySyncedWithoutDuplicate()
+    {
+        #region Arrange
+        Guid transactionId = Guid.NewGuid();
+        DateTimeOffset originalSyncTime = ServerNow.AddHours(-2);
+        TransactionDto retry = CreateTransaction(transactionId, _saleId);
+        _dbContext.Transactions.Add(new Transaction
+        {
+            Id = transactionId,
+            SaleId = retry.SaleId,
+            Method = retry.Method,
+            Amount = retry.Amount,
+            Status = TransactionStatus.Synced,
+            CreatedAt = retry.CreatedAt.ToUniversalTime(),
+            SyncedAt = originalSyncTime
+        });
+        _dbContext.SaveChanges();
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync([retry]);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.Success));
+            Assert.That(result.Items.Single().Status, Is.EqualTo(TransactionIngestionItemStatus.AlreadySynced));
+            Assert.That(result.Items.Single().SyncedAt, Is.EqualTo(originalSyncTime));
+            Assert.That(_dbContext.Transactions.Count(), Is.EqualTo(1));
+        });
+        #endregion
+    }
+
+    [Test]
+    public async Task IngestAsync_MixedNewAndRetry_ReturnsResultsInRequestOrder()
+    {
+        #region Arrange
+        Guid existingId = Guid.NewGuid();
+        TransactionDto existing = CreateTransaction(existingId, _saleId, 40.00m);
+        TransactionDto added = CreateTransaction(Guid.NewGuid(), _saleId, 60.00m);
+        _dbContext.Transactions.Add(new Transaction
+        {
+            Id = existing.Id,
+            SaleId = existing.SaleId,
+            Method = existing.Method,
+            Amount = existing.Amount,
+            Status = TransactionStatus.Synced,
+            CreatedAt = existing.CreatedAt.ToUniversalTime(),
+            SyncedAt = ServerNow.AddHours(-1)
+        });
+        _dbContext.SaveChanges();
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync([existing, added]);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.Success));
+            Assert.That(result.Items.Select(item => item.TransactionId),
+                Is.EqualTo(new[] { existing.Id, added.Id }));
+            Assert.That(result.Items.Select(item => item.Status),
+                Is.EqualTo(new[]
+                {
+                    TransactionIngestionItemStatus.AlreadySynced,
+                    TransactionIngestionItemStatus.Inserted
+                }));
+            Assert.That(_dbContext.Transactions.Count(), Is.EqualTo(2));
+        });
+        #endregion
+    }
+
+    [Test]
+    public async Task IngestAsync_ExistingIdWithDifferentAmount_ReturnsConflictWithoutAnyWrites()
+    {
+        #region Arrange
+        Guid existingId = Guid.NewGuid();
+        TransactionDto original = CreateTransaction(existingId, _saleId, 40.00m);
+        _dbContext.Transactions.Add(new Transaction
+        {
+            Id = original.Id,
+            SaleId = original.SaleId,
+            Method = original.Method,
+            Amount = original.Amount,
+            Status = TransactionStatus.Synced,
+            CreatedAt = original.CreatedAt.ToUniversalTime(),
+            SyncedAt = ServerNow.AddHours(-1)
+        });
+        _dbContext.SaveChanges();
+
+        TransactionDto conflicting = original with { Amount = 41.00m };
+        TransactionDto otherwiseNew = CreateTransaction(Guid.NewGuid(), _saleId, 20.00m);
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync([conflicting, otherwiseNew]);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.TransactionConflict));
+            Assert.That(result.OffendingIds, Is.EqualTo(new[] { existingId }));
+            Assert.That(_dbContext.Transactions.Count(), Is.EqualTo(1));
+        });
+        #endregion
+    }
     #endregion
 
     #region Private Methods
