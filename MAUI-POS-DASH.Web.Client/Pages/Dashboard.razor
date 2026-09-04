@@ -1,0 +1,38 @@
+@page "/"
+@layout DashboardLayout
+
+<PageTitle>Back Office Dashboard</PageTitle>
+
+<h1>Shift Reconciliation</h1>
+
+<p>This dashboard will read synced data once the Sync module's persistence lands — for now it's wired to fixed sample data so the shared components can be seen working end-to-end.</p>
+
+<ShiftSummaryCard Shift="_sampleShift" />
+
+<h2>Recent Transactions</h2>
+@foreach (var transaction in _sampleTransactions)
+{
+    <TransactionRow Transaction="transaction" />
+}
+
+@code {
+    // We use a couple of made-up sample records so the shared components render something real
+    // during a demo — Builder/Overmind swap this for a live call to /api/shifts once that
+    // endpoint exists.
+    private readonly ShiftDto _sampleShift = new(
+        Id: Guid.NewGuid(),
+        AttendantId: Guid.NewGuid(),
+        AttendantName: "Marge Simpson",
+        OpenedAt: DateTimeOffset.UtcNow.AddHours(-3),
+        ClosedAt: null,
+        OpeningFloat: 100.00m,
+        ClosingCashCounted: null,
+        Status: ShiftStatus.Open);
+
+    private readonly List<TransactionDto> _sampleTransactions =
+    [
+        new(Guid.NewGuid(), Guid.NewGuid(), PaymentMethod.FleetCard, 82.50m, TransactionStatus.Synced, DateTimeOffset.UtcNow.AddMinutes(-40), DateTimeOffset.UtcNow.AddMinutes(-39)),
+        new(Guid.NewGuid(), Guid.NewGuid(), PaymentMethod.Cash, 45.00m, TransactionStatus.Synced, DateTimeOffset.UtcNow.AddMinutes(-25), DateTimeOffset.UtcNow.AddMinutes(-24)),
+        new(Guid.NewGuid(), Guid.NewGuid(), PaymentMethod.MobileMoney, 30.00m, TransactionStatus.Pending, DateTimeOffset.UtcNow.AddMinutes(-5), null)
+    ];
+}

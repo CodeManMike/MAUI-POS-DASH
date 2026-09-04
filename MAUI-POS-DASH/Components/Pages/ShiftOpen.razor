@@ -1,0 +1,29 @@
+@page "/shift/open"
+
+<PageTitle>Open Shift</PageTitle>
+
+<h1>Open Shift</h1>
+
+<label>
+    Opening float
+    <input type="number" step="0.01" @bind="_openingFloat" class="mock-input" />
+</label>
+
+<button class="mock-button" @onclick="OpenShift">Open Shift</button>
+
+@if (_message is not null)
+{
+    <p>@_message</p>
+}
+
+@code {
+    private decimal _openingFloat;
+    private string? _message;
+
+    private void OpenShift()
+    {
+        // We don't call ShiftService yet — that needs a signed-in attendant, which the
+        // AttendantMgmt module hasn't landed. This proves the page and its field wiring only.
+        _message = $"Would open a shift with a float of {_openingFloat:C}.";
+    }
+}

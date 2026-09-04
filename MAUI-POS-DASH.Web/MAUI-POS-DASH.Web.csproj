@@ -11,4 +11,9 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MAUI-POS-DASH.Core\MAUI-POS-DASH.Core.csproj" />
+    <ProjectReference Include="..\MAUI-POS-DASH.Core.Persistence\MAUI-POS-DASH.Core.Persistence.csproj" />
+  </ItemGroup>
+
 </Project>

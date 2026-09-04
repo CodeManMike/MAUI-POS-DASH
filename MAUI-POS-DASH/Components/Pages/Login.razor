@@ -1,0 +1,11 @@
+@page "/login"
+@inject NavigationManager Navigation
+
+<PageTitle>Attendant Login</PageTitle>
+
+<h1>Attendant Login</h1>
+
+<p>PIN entry is a UI placeholder in this skeleton — the AttendantMgmt module owns real authentication.</p>
+
+<input type="password" maxlength="6" placeholder="Enter PIN" class="mock-input" />
+<button class="mock-button" @onclick='() => Navigation.NavigateTo("/")'>Sign in</button>

@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MAUI-POS-DASH.Shared\MAUI-POS-DASH.Shared.csproj" />
+    <ProjectReference Include="..\MAUI-POS-DASH.Core\MAUI-POS-DASH.Core.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,24 @@
+@using MAUI_POS_DASH.Core.Contracts
+@using MAUI_POS_DASH.Core.Domain
+
+<div class="shift-summary-card">
+    <div class="shift-summary-card__header">
+        <span class="shift-summary-card__attendant">@Shift.AttendantName</span>
+        <StatusBadge Status="@(Shift.Status == ShiftStatus.Open ? "Open" : "Closed")" />
+    </div>
+    <div class="shift-summary-card__body">
+        <p>Opened: @Shift.OpenedAt.ToLocalTime().ToString("t")</p>
+        @if (Shift.ClosedAt is not null)
+        {
+            <p>Closed: @Shift.ClosedAt.Value.ToLocalTime().ToString("t")</p>
+        }
+        <p>
+            Opening float: <CurrencyText Amount="Shift.OpeningFloat" />
+        </p>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required ShiftDto Shift { get; set; }
+}

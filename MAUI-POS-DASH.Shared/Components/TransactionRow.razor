@@ -1,0 +1,12 @@
+@using MAUI_POS_DASH.Core.Contracts
+
+<div class="transaction-row">
+    <span class="transaction-row__method">@Transaction.Method</span>
+    <CurrencyText Amount="Transaction.Amount" />
+    <StatusBadge Status="@Transaction.Status.ToString()" />
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required TransactionDto Transaction { get; set; }
+}
