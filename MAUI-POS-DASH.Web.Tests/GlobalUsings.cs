@@ -1,0 +1,13 @@
+global using System.Net;
+global using System.Net.Http.Json;
+global using MAUI_POS_DASH.Core.Contracts;
+global using MAUI_POS_DASH.Core.Domain;
+global using MAUI_POS_DASH.Core.Persistence;
+global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.AspNetCore.Mvc.Testing;
+global using Microsoft.AspNetCore.TestHost;
+global using Microsoft.Data.Sqlite;
+global using Microsoft.EntityFrameworkCore;
+global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.DependencyInjection.Extensions;
+global using NUnit.Framework;
