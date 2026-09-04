@@ -17,7 +17,7 @@
 - Create: `MAUI-POS-DASH.Web.Tests/GlobalUsings.cs`
 - Modify: `MAUI-POS-DASH.slnx`
 
-- [ ] **Step 1: Create the test project file**
+- [x] **Step 1: Create the test project file**
 
 Create `MAUI-POS-DASH.Web.Tests/MAUI-POS-DASH.Web.Tests.csproj`:
 
@@ -49,7 +49,7 @@ Create `MAUI-POS-DASH.Web.Tests/MAUI-POS-DASH.Web.Tests.csproj`:
 </Project>
 ```
 
-- [ ] **Step 2: Add test global usings**
+- [x] **Step 2: Add test global usings**
 
 Create `MAUI-POS-DASH.Web.Tests/GlobalUsings.cs`:
 
@@ -69,7 +69,7 @@ global using Microsoft.Extensions.DependencyInjection.Extensions;
 global using NUnit.Framework;
 ```
 
-- [ ] **Step 3: Add the project to the solution**
+- [x] **Step 3: Add the project to the solution**
 
 Run:
 
@@ -80,7 +80,7 @@ dotnet restore MAUI-POS-DASH.slnx
 
 Expected: the solution lists `MAUI-POS-DASH.Web.Tests`, and restore succeeds.
 
-- [ ] **Step 4: Verify the empty test project builds**
+- [x] **Step 4: Verify the empty test project builds**
 
 Run:
 
@@ -90,7 +90,7 @@ dotnet test MAUI-POS-DASH.Web.Tests/MAUI-POS-DASH.Web.Tests.csproj --no-restore
 
 Expected: exit code 0 with no discovered tests.
 
-- [ ] **Step 5: Commit the test scaffold**
+- [x] **Step 5: Commit the test scaffold**
 
 ```powershell
 git add MAUI-POS-DASH.Web.Tests MAUI-POS-DASH.slnx
@@ -107,7 +107,7 @@ git commit -m "Add Web test project" -m "Builder"
 - Modify: `MAUI-POS-DASH.Web.Tests/GlobalUsings.cs`
 - Modify: `MAUI-POS-DASH.Web/GlobalUsings.cs`
 
-- [ ] **Step 1: Write the first failing service tests**
+- [x] **Step 1: Write the first failing service tests**
 
 Create `MAUI-POS-DASH.Web.Tests/Services/TransactionIngestionServiceTests.cs`:
 
@@ -345,7 +345,7 @@ public class TransactionIngestionServiceTests
 }
 ```
 
-- [ ] **Step 2: Run the tests to verify RED**
+- [x] **Step 2: Run the tests to verify RED**
 
 Run:
 
@@ -355,7 +355,7 @@ dotnet test MAUI-POS-DASH.Web.Tests/MAUI-POS-DASH.Web.Tests.csproj --no-restore 
 
 Expected: compilation fails because `MAUI_POS_DASH.Web.Services` and the ingestion types do not exist.
 
-- [ ] **Step 3: Add the service contract and result model**
+- [x] **Step 3: Add the service contract and result model**
 
 Create `MAUI-POS-DASH.Web/Services/ITransactionIngestionService.cs`:
 
@@ -428,7 +428,7 @@ public sealed record TransactionIngestionResult(
     string? Detail = null);
 ```
 
-- [ ] **Step 4: Add the service-layer global usings**
+- [x] **Step 4: Add the service-layer global usings**
 
 Add to `MAUI-POS-DASH.Web.Tests/GlobalUsings.cs`:
 
@@ -442,7 +442,7 @@ Add to `MAUI-POS-DASH.Web/GlobalUsings.cs`:
 global using MAUI_POS_DASH.Core.Domain;
 ```
 
-- [ ] **Step 5: Add the minimal happy-path implementation**
+- [x] **Step 5: Add the minimal happy-path implementation**
 
 Create `MAUI-POS-DASH.Web/Services/TransactionIngestionService.cs`:
 
@@ -505,13 +505,13 @@ public class TransactionIngestionService : ITransactionIngestionService
 }
 ```
 
-- [ ] **Step 6: Run the targeted tests to verify GREEN**
+- [x] **Step 6: Run the targeted tests to verify GREEN**
 
 Run the Step 2 command again.
 
 Expected: 4 tests pass.
 
-- [ ] **Step 7: Commit the first service slice**
+- [x] **Step 7: Commit the first service slice**
 
 ```powershell
 git add MAUI-POS-DASH.Web/Services MAUI-POS-DASH.Web/GlobalUsings.cs MAUI-POS-DASH.Web.Tests/Services MAUI-POS-DASH.Web.Tests/GlobalUsings.cs
@@ -524,7 +524,7 @@ git commit -m "Add transaction ingestion service" -m "Builder"
 - Modify: `MAUI-POS-DASH.Web.Tests/Services/TransactionIngestionServiceTests.cs`
 - Modify: `MAUI-POS-DASH.Web/Services/TransactionIngestionService.cs`
 
-- [ ] **Step 1: Add failing validation and dependency tests**
+- [x] **Step 1: Add failing validation and dependency tests**
 
 Add these methods inside the test fixture's `Tests` region:
 
@@ -645,7 +645,7 @@ private static IEnumerable<TestCaseData> InvalidTransactionCases()
 }
 ```
 
-- [ ] **Step 2: Run the new tests to verify RED**
+- [x] **Step 2: Run the new tests to verify RED**
 
 Run:
 
@@ -655,7 +655,7 @@ dotnet test MAUI-POS-DASH.Web.Tests/MAUI-POS-DASH.Web.Tests.csproj --no-restore 
 
 Expected: invalid requests are inserted or fail at EF, duplicate IDs throw, and missing Sales reach an FK failure instead of returning the designed statuses.
 
-- [ ] **Step 3: Add validation and Sale preflight**
+- [x] **Step 3: Add validation and Sale preflight**
 
 Replace `IngestAsync` with this version and add the private helpers:
 
@@ -766,13 +766,13 @@ private static TransactionIngestionResult Failure(
 }
 ```
 
-- [ ] **Step 4: Run the targeted tests to verify GREEN**
+- [x] **Step 4: Run the targeted tests to verify GREEN**
 
 Run the Step 2 command again.
 
 Expected: 12 tests pass (the parameterized method contributes five cases).
 
-- [ ] **Step 5: Commit validation and dependency checks**
+- [x] **Step 5: Commit validation and dependency checks**
 
 ```powershell
 git add MAUI-POS-DASH.Web/Services/TransactionIngestionService.cs MAUI-POS-DASH.Web.Tests/Services/TransactionIngestionServiceTests.cs
@@ -785,7 +785,7 @@ git commit -m "Validate transaction sync batches" -m "Builder"
 - Modify: `MAUI-POS-DASH.Web.Tests/Services/TransactionIngestionServiceTests.cs`
 - Modify: `MAUI-POS-DASH.Web/Services/TransactionIngestionService.cs`
 
-- [ ] **Step 1: Add failing retry and conflict tests**
+- [x] **Step 1: Add failing retry and conflict tests**
 
 Add these methods inside the test fixture's `Tests` region:
 
@@ -903,13 +903,13 @@ public async Task IngestAsync_ExistingIdWithDifferentAmount_ReturnsConflictWitho
 }
 ```
 
-- [ ] **Step 2: Run the tests to verify RED**
+- [x] **Step 2: Run the tests to verify RED**
 
 Run the targeted command from Task 3 Step 2.
 
 Expected: the retry tests fail with duplicate-key exceptions, and the conflict test does not return `TransactionConflict`.
 
-- [ ] **Step 3: Add existing-row classification**
+- [x] **Step 3: Add existing-row classification**
 
 In `IngestAsync`, insert this block after the missing-Sale check and before obtaining the server timestamp:
 
@@ -992,11 +992,11 @@ private static bool MatchesImmutableFields(TransactionDto requested, Transaction
 }
 ```
 
-- [ ] **Step 4: Run the targeted tests to verify GREEN**
+- [x] **Step 4: Run the targeted tests to verify GREEN**
 
 Expected: 15 tests pass.
 
-- [ ] **Step 5: Commit idempotency**
+- [x] **Step 5: Commit idempotency**
 
 ```powershell
 git add MAUI-POS-DASH.Web/Services/TransactionIngestionService.cs MAUI-POS-DASH.Web.Tests/Services/TransactionIngestionServiceTests.cs
@@ -1009,7 +1009,7 @@ git commit -m "Make transaction ingestion idempotent" -m "Builder"
 - Modify: `MAUI-POS-DASH.Web.Tests/Services/TransactionIngestionServiceTests.cs`
 - Modify: `MAUI-POS-DASH.Web/Services/TransactionIngestionService.cs`
 
-- [ ] **Step 1: Add the failing persistence-conflict test**
+- [x] **Step 1: Add the failing persistence-conflict test**
 
 Add inside the test fixture's `Tests` region:
 
@@ -1038,7 +1038,7 @@ public async Task IngestAsync_SaveRace_ReturnsPersistenceConflictAndDetachesInse
 }
 ```
 
-- [ ] **Step 2: Run the test to verify RED**
+- [x] **Step 2: Run the test to verify RED**
 
 Run:
 
@@ -1048,7 +1048,7 @@ dotnet test MAUI-POS-DASH.Web.Tests/MAUI-POS-DASH.Web.Tests.csproj --no-restore 
 
 Expected: `DbUpdateException` escapes the service.
 
-- [ ] **Step 3: Catch only EF write conflicts and detach the attempted inserts**
+- [x] **Step 3: Catch only EF write conflicts and detach the attempted inserts**
 
 Replace the `if (newEntities.Count > 0)` block with:
 
@@ -1078,13 +1078,13 @@ if (newEntities.Count > 0)
 
 Do not catch `OperationCanceledException`; cancellation must continue to propagate.
 
-- [ ] **Step 4: Run the service tests to verify GREEN**
+- [x] **Step 4: Run the service tests to verify GREEN**
 
 Run the full `TransactionIngestionServiceTests` filter.
 
 Expected: 16 tests pass.
 
-- [ ] **Step 5: Commit the persistence boundary**
+- [x] **Step 5: Commit the persistence boundary**
 
 ```powershell
 git add MAUI-POS-DASH.Web/Services/TransactionIngestionService.cs MAUI-POS-DASH.Web.Tests/Services/TransactionIngestionServiceTests.cs
@@ -1099,7 +1099,7 @@ git commit -m "Handle transaction persistence races" -m "Builder"
 - Modify: `MAUI-POS-DASH.Web/GlobalUsings.cs`
 - Modify: `MAUI-POS-DASH.Web/Program.cs`
 
-- [ ] **Step 1: Add failing HTTP integration tests**
+- [x] **Step 1: Add failing HTTP integration tests**
 
 Create `MAUI-POS-DASH.Web.Tests/Api/TransactionsApiTests.cs`:
 
@@ -1360,7 +1360,7 @@ public class TransactionsApiTests
 }
 ```
 
-- [ ] **Step 2: Run the API tests to verify RED**
+- [x] **Step 2: Run the API tests to verify RED**
 
 Run:
 
@@ -1371,7 +1371,7 @@ dotnet test MAUI-POS-DASH.Web.Tests/MAUI-POS-DASH.Web.Tests.csproj --no-restore 
 Expected: compilation fails because `Program` is internal. This is the intended RED state; Step 3
 makes the entry point testable before Step 4 replaces the `501` route behavior.
 
-- [ ] **Step 3: Register the service and expose the test-host entry point**
+- [x] **Step 3: Register the service and expose the test-host entry point**
 
 Add to `MAUI-POS-DASH.Web/GlobalUsings.cs`:
 
@@ -1393,7 +1393,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ITransactionIngestionService, TransactionIngestionService>();
 ```
 
-- [ ] **Step 4: Replace the stub with thin HTTP mapping**
+- [x] **Step 4: Replace the stub with thin HTTP mapping**
 
 Replace `TransactionsApi.cs` with:
 
@@ -1462,7 +1462,7 @@ public static class TransactionsApi
 }
 ```
 
-- [ ] **Step 5: Run API and full Web tests to verify GREEN**
+- [x] **Step 5: Run API and full Web tests to verify GREEN**
 
 Run:
 
@@ -1473,7 +1473,7 @@ dotnet test MAUI-POS-DASH.Web.Tests/MAUI-POS-DASH.Web.Tests.csproj --no-restore
 
 Expected: 5 API cases pass, then all 21 Web test cases pass with no failures or warnings.
 
-- [ ] **Step 6: Commit endpoint wiring**
+- [x] **Step 6: Commit endpoint wiring**
 
 ```powershell
 git add MAUI-POS-DASH.Web MAUI-POS-DASH.Web.Tests/Api
@@ -1486,7 +1486,7 @@ git commit -m "Persist transaction sync batches" -m "Builder"
 - Modify: `docs/ARCHITECTURE.md`
 - Modify: `docs/superpowers/plans/2026-09-04-sync-endpoint-persistence.md`
 
-- [ ] **Step 1: Update the architecture status list**
+- [x] **Step 1: Update the architecture status list**
 
 Replace the current `POST /api/transactions` stub-status bullet with:
 
@@ -1496,7 +1496,7 @@ Replace the current `POST /api/transactions` stub-status bullet with:
   follow-up work before the sync boundary is production-complete.
 ```
 
-- [ ] **Step 2: Restore tools and run every automated verification gate**
+- [x] **Step 2: Restore tools and run every automated verification gate**
 
 Run:
 
@@ -1513,7 +1513,7 @@ git diff --check
 Expected: tools and packages restore; Core and Web tests report zero failures; the complete
 solution builds with zero warnings/errors; formatting and whitespace checks exit 0.
 
-- [ ] **Step 3: Check whether a real Postgres smoke is available**
+- [x] **Step 3: Check whether a real Postgres smoke is available**
 
 Run:
 
@@ -1546,7 +1546,7 @@ $env:ConnectionStrings__Backoffice = $syncConnection
 
 Expected: the explicitly named container becomes ready, and the Backoffice migrations apply.
 
-- [ ] **Step 4: Run the Web host and perform the live HTTP smoke**
+- [x] **Step 4: Run the Web host and perform the live HTTP smoke**
 
 Run the Web host on an HTTP-only local test port so certificate trust does not obscure endpoint
 behavior:
@@ -1588,7 +1588,7 @@ Remove-Item Env:\ConnectionStrings__Backoffice -ErrorAction SilentlyContinue
 docker rm -f mauiposdash-sync-builder-20260904
 ```
 
-- [ ] **Step 5: Review branch scope and mark plan checkboxes accurately**
+- [x] **Step 5: Review branch scope and mark plan checkboxes accurately**
 
 Run:
 
@@ -1603,14 +1603,14 @@ Expected: changes remain limited to `AGENTS.md`, sync documentation, Web endpoin
 the new Web test project, and the solution file. No Core, Core.Persistence, Core.Tests, MAUI, or
 Architect-owned Attendant Management source file is modified by Builder.
 
-- [ ] **Step 6: Commit verified documentation state**
+- [x] **Step 6: Commit verified documentation state**
 
 ```powershell
 git add docs/ARCHITECTURE.md docs/superpowers/plans/2026-09-04-sync-endpoint-persistence.md
 git commit -m "Document transaction sync persistence" -m "Builder"
 ```
 
-- [ ] **Step 7: Re-run the completion gate after the final commit**
+- [x] **Step 7: Re-run the completion gate after the final commit**
 
 Run:
 

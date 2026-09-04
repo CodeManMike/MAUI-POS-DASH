@@ -49,6 +49,7 @@ starts the work.
   don't call `ShiftService` yet (that needs a signed-in attendant).
 - `FleetCardSale.razor`, `MobileMoneySale.razor`, `CashSale.razor`, `AttendantManagement.razor`
   are "coming soon" pages pointing at their module's README.
-- `POST /api/transactions` returns `501 Not Implemented` — it proves the contract compiles, not
-  that it persists anything yet.
+- `POST /api/transactions` persists idempotent transaction batches whose Sales already exist in
+  the back office. Sale/Shift graph synchronization and terminal authentication remain separate
+  follow-up work before the sync boundary is production-complete.
 - The dashboard's `Dashboard.razor` renders fixed sample data, not a live query.
