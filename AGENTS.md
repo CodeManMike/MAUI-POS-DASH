@@ -23,6 +23,9 @@ the work, so two contributors don't pick the same module at the same time.
   local `dotnet-ef` tool (`dotnet tool restore` first).
 - **Mapping:** Riok.Mapperly for entity↔DTO (`Core/Contracts/EntityMapper.cs`). Not AutoMapper —
   it moved to a commercial license in 2024.
+- **UI boundaries:** Prefer service-layer orchestration for both Web and MAUI. Keep pages and
+  components deliberately dumb: they present state, bind input, navigate, and call services;
+  business rules, validation, persistence, and external integrations belong behind services.
 - **Testing:** NUnit. Seed the relevant `DbContext` at the top of a `[SetUp]` (real schema, real
   relationships — not mocks), dispose it in `[TearDown]`. Every `[Test]` method uses
   `#region Arrange` / `#region Act` / `#region Assert`.
