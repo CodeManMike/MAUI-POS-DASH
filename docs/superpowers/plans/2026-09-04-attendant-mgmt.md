@@ -1063,12 +1063,18 @@ git commit -m "Wire attendant services into MAUI DI"
 
 - [ ] **Step 1: Add the new namespaces**
 
-In `MAUI-POS-DASH/Components/_Imports.razor`, add these two lines at the end:
+In `MAUI-POS-DASH/Components/_Imports.razor`, add these three lines at the end:
 
 ```razor
 @using MAUI_POS_DASH.Core.Attendants
 @using MAUI_POS_DASH.Core.Domain
+@using MAUI_POS_DASH.Core.Shifts
 ```
+
+**Correction found in Task 13:** the original version of this step only listed the first two —
+`Core.Shifts` (where `ShiftService` lives) is also needed once `ShiftOpen.razor`/`ShiftClose.razor`
+start injecting it, and its absence here surfaces as a `CS0246` on those pages during Task 13's
+build step. Include it now to avoid that.
 
 - [ ] **Step 2: Commit**
 
