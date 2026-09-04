@@ -17,5 +17,11 @@ public class Attendant
     public required string PinHash { get; set; }
 
     public AttendantRole Role { get; set; }
+
+    /// <summary>
+    /// We deactivate attendants instead of deleting them — Shift and Sale reference AttendantId,
+    /// so removing the row would either violate that foreign key or destroy history.
+    /// </summary>
+    public bool IsActive { get; set; } = true;
     #endregion
 }

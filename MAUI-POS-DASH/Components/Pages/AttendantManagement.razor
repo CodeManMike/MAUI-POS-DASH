@@ -1,9 +1,160 @@
 @page "/attendants"
+@inject AttendantService AttendantService
 
 <PageTitle>Attendants</PageTitle>
 
 <h1>Attendants</h1>
 
-<p>This module isn't built yet — see <code>MAUI-POS-DASH.Core/Modules/AttendantMgmt/README.md</code> for its scope and how to claim it.</p>
+@if (_loading)
+{
+    <p>Loading…</p>
+}
+else if (!_isManager)
+{
+    <p>Managers only — you don't have access to this page.</p>
+    <a href="/">Back to terminal home</a>
+}
+else
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var attendant in _attendants)
+            {
+                <tr>
+                    <td>@attendant.Name</td>
+                    <td>@attendant.Role</td>
+                    <td>
+                        <button class="mock-button" @onclick="() => StartEdit(attendant)">Edit</button>
+                        <button class="mock-button" @onclick="() => DeactivateAsync(attendant)">Deactivate</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 
-<a href="/">Back to terminal home</a>
+    <h2>@(_editingId is null ? "New attendant" : "Edit attendant")</h2>
+
+    <label>
+        Name
+        <input class="mock-input" @bind="_formName" />
+    </label>
+
+    <label>
+        Role
+        <select class="mock-input" @bind="_formRole">
+            @foreach (var role in Enum.GetValues<AttendantRole>())
+            {
+                <option value="@role">@role</option>
+            }
+        </select>
+    </label>
+
+    <label>
+        @(_editingId is null ? "PIN" : "New PIN (leave blank to keep current)")
+        <input type="password" maxlength="6" class="mock-input" @bind="_formPin" />
+    </label>
+
+    <button class="mock-button" @onclick="SaveAsync">Save</button>
+    @if (_editingId is not null)
+    {
+        <button class="mock-button" @onclick="ResetForm">Cancel</button>
+    }
+
+    @if (_errorMessage is not null)
+    {
+        <p>@_errorMessage</p>
+    }
+}
+
+@code {
+    private bool _loading = true;
+    private bool _isManager;
+    private IReadOnlyList<Attendant> _attendants = [];
+    private Guid? _editingId;
+    private string _formName = string.Empty;
+    private AttendantRole _formRole = AttendantRole.Attendant;
+    private string _formPin = string.Empty;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var session = await AttendantService.GetActiveSessionAsync();
+        _isManager = session?.Attendant?.Role == AttendantRole.Manager;
+
+        if (_isManager)
+        {
+            _attendants = await AttendantService.GetActiveAttendantsAsync();
+        }
+
+        _loading = false;
+    }
+
+    private void StartEdit(Attendant attendant)
+    {
+        _editingId = attendant.Id;
+        _formName = attendant.Name;
+        _formRole = attendant.Role;
+        _formPin = string.Empty;
+        _errorMessage = null;
+    }
+
+    private void ResetForm()
+    {
+        _editingId = null;
+        _formName = string.Empty;
+        _formRole = AttendantRole.Attendant;
+        _formPin = string.Empty;
+        _errorMessage = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        try
+        {
+            if (_editingId is null)
+            {
+                await AttendantService.CreateAttendantAsync(_formName, _formPin, _formRole);
+            }
+            else
+            {
+                // We reset the PIN first, not last — ValidatePin runs before any write happens
+                // inside ResetPinAsync, so an invalid PIN throws here with nothing persisted yet.
+                // Doing UpdateAttendantAsync first would commit the name/role change even when
+                // the PIN that came with it turns out to be invalid.
+                if (!string.IsNullOrEmpty(_formPin))
+                {
+                    await AttendantService.ResetPinAsync(_editingId.Value, _formPin);
+                }
+
+                await AttendantService.UpdateAttendantAsync(_editingId.Value, _formName, _formRole);
+            }
+
+            _attendants = await AttendantService.GetActiveAttendantsAsync();
+            ResetForm();
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            _errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeactivateAsync(Attendant attendant)
+    {
+        try
+        {
+            await AttendantService.DeactivateAttendantAsync(attendant.Id);
+            _attendants = await AttendantService.GetActiveAttendantsAsync();
+        }
+        catch (InvalidOperationException ex)
+        {
+            _errorMessage = ex.Message;
+        }
+    }
+}

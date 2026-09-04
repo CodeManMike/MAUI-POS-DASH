@@ -30,6 +30,11 @@ public class BackofficeDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(BackofficeDbContext).Assembly);
+
+        // AttendantSession is terminal-local state — it belongs only in TerminalDbContext, never
+        // synced to the back office. We exclude it here even though AttendantSessionConfiguration
+        // gets picked up by the assembly scan above.
+        modelBuilder.Ignore<AttendantSession>();
     }
     #endregion
 }

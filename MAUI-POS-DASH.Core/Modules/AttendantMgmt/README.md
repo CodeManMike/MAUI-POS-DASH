@@ -1,14 +1,10 @@
 # Attendant Management module
 
-**Status:** not started. **Owner:** unclaimed.
+**Status:** done. **Owner:** Architect.
 
-Handles attendant PIN login, PIN hashing/verification, and CRUD for attendant records —
-currently `MAUI-POS-DASH/Components/Pages/Login.razor` is a UI-only placeholder with no real
-authentication behind it.
+Handles attendant PIN login (tap a name, then enter PIN), PIN hashing/verification (PBKDF2 via
+`Core/Attendants/Pbkdf2PinHasher.cs`), and CRUD for attendant records. Wired into
+`ShiftOpen.razor`/`ShiftClose.razor` so shift open/close use the real signed-in attendant instead
+of a placeholder message.
 
-**Depends on:** `Core/Domain/Attendant.cs`.
-
-**To claim this module:** add your name to the Owner line above, update the row in
-`docs/ARCHITECTURE.md`, and open a PR/branch scoped to this folder plus the
-`MAUI-POS-DASH/Components/Pages/Login.razor` and
-`MAUI-POS-DASH/Components/Pages/AttendantManagement.razor` pages.
+See `docs/superpowers/specs/2026-09-04-attendant-mgmt-design.md` for the full design.

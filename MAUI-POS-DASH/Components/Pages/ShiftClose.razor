@@ -1,28 +1,50 @@
 @page "/shift/close"
+@inject AttendantService AttendantService
+@inject ShiftService ShiftService
+@inject NavigationManager Navigation
 
 <PageTitle>Close Shift</PageTitle>
 
 <h1>Close Shift</h1>
 
-<label>
-    Cash counted
-    <input type="number" step="0.01" @bind="_cashCounted" class="mock-input" />
-</label>
+@if (_shift is not null)
+{
+    <label>
+        Cash counted
+        <input type="number" step="0.01" @bind="_cashCounted" class="mock-input" />
+    </label>
 
-<button class="mock-button" @onclick="CloseShift">Close Shift</button>
-
-@if (_message is not null)
+    <button class="mock-button" @onclick="CloseShiftAsync">Close Shift</button>
+}
+else if (_message is not null)
 {
     <p>@_message</p>
 }
 
 @code {
+    private Shift? _shift;
     private decimal _cashCounted;
     private string? _message;
 
-    private void CloseShift()
+    protected override async Task OnInitializedAsync()
     {
-        // Same story as ShiftOpen — proves the page, not the business logic behind it yet.
-        _message = $"Would close the shift with {_cashCounted:C} counted.";
+        var session = await AttendantService.GetActiveSessionAsync();
+        if (session is null)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        _shift = await ShiftService.GetActiveShiftAsync(session.AttendantId);
+        if (_shift is null)
+        {
+            _message = "There's no open shift to close.";
+        }
+    }
+
+    private async Task CloseShiftAsync()
+    {
+        await ShiftService.CloseShiftAsync(_shift!, _cashCounted);
+        Navigation.NavigateTo("/");
     }
 }

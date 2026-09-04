@@ -1,11 +1,69 @@
 @page "/login"
+@inject AttendantService AttendantService
 @inject NavigationManager Navigation
 
 <PageTitle>Attendant Login</PageTitle>
 
 <h1>Attendant Login</h1>
 
-<p>PIN entry is a UI placeholder in this skeleton — the AttendantMgmt module owns real authentication.</p>
+@if (_selectedAttendant is null)
+{
+    <div class="module-grid">
+        @foreach (var attendant in _attendants)
+        {
+            <button class="module-tile" @onclick="() => SelectAttendant(attendant)">@attendant.Name</button>
+        }
+    </div>
+}
+else
+{
+    <p>Signing in as @_selectedAttendant.Name</p>
 
-<input type="password" maxlength="6" placeholder="Enter PIN" class="mock-input" />
-<button class="mock-button" @onclick='() => Navigation.NavigateTo("/")'>Sign in</button>
+    <input type="password" maxlength="6" placeholder="Enter PIN" class="mock-input" @bind="_pin" @bind:event="oninput" />
+    <button class="mock-button" @onclick="SubmitPinAsync">Sign in</button>
+    <button class="mock-button" @onclick="() => _selectedAttendant = null">Back</button>
+
+    @if (_errorMessage is not null)
+    {
+        <p>@_errorMessage</p>
+    }
+}
+
+@code {
+    private IReadOnlyList<Attendant> _attendants = [];
+    private Attendant? _selectedAttendant;
+    private string _pin = string.Empty;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AttendantService.EnsureDefaultAttendantSeededAsync();
+        _attendants = await AttendantService.GetActiveAttendantsAsync();
+    }
+
+    private void SelectAttendant(Attendant attendant)
+    {
+        _selectedAttendant = attendant;
+        _pin = string.Empty;
+        _errorMessage = null;
+    }
+
+    private async Task SubmitPinAsync()
+    {
+        var result = await AttendantService.TryLoginAsync(_selectedAttendant!.Id, _pin);
+
+        if (result.Status == LoginStatus.Success)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        _errorMessage = result.Status switch
+        {
+            LoginStatus.InvalidPin => "Wrong PIN — try again.",
+            LoginStatus.AttendantInactive => "This attendant is no longer active.",
+            _ => "Something went wrong — try again."
+        };
+        _pin = string.Empty;
+    }
+}

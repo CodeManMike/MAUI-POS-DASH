@@ -1,8 +1,20 @@
 @inherits LayoutComponentBase
+@inject AttendantService AttendantService
+@inject NavigationManager Navigation
+@implements IDisposable
 
 <div class="terminal-shell">
     <header class="terminal-shell__status-bar">
         <span class="terminal-shell__title">MAUI-POS-DASH Terminal</span>
+        @if (_signedInAttendantName is not null)
+        {
+            <span class="terminal-shell__attendant">@_signedInAttendantName</span>
+            <button class="terminal-shell__sign-out" @onclick="SignOutAsync">Sign out</button>
+        }
+        else
+        {
+            <span class="terminal-shell__attendant">Not signed in</span>
+        }
         <span class="terminal-shell__connectivity" title="Simulated — this skeleton is always online">● Online</span>
     </header>
 
@@ -16,3 +28,40 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private string? _signedInAttendantName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // We refresh on every navigation, not just once — the layout instance is reused across
+        // page changes, so without this the status bar would still say "Not signed in" right
+        // after a successful login navigates to Home.
+        Navigation.LocationChanged += OnLocationChanged;
+        await RefreshSignedInAttendantAsync();
+    }
+
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        await RefreshSignedInAttendantAsync();
+        StateHasChanged();
+    }
+
+    private async Task RefreshSignedInAttendantAsync()
+    {
+        var session = await AttendantService.GetActiveSessionAsync();
+        _signedInAttendantName = session?.Attendant?.Name;
+    }
+
+    private async Task SignOutAsync()
+    {
+        await AttendantService.LogoutAsync();
+        _signedInAttendantName = null;
+        Navigation.NavigateTo("/login");
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+}
