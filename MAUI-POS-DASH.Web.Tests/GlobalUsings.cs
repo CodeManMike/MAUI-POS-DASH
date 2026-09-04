@@ -3,6 +3,7 @@ global using System.Net.Http.Json;
 global using MAUI_POS_DASH.Core.Contracts;
 global using MAUI_POS_DASH.Core.Domain;
 global using MAUI_POS_DASH.Core.Persistence;
+global using MAUI_POS_DASH.Web.Services;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.AspNetCore.Mvc.Testing;
 global using Microsoft.AspNetCore.TestHost;
