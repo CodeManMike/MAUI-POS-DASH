@@ -38,7 +38,7 @@ SDK later means implementing the same interfaces, not rewriting callers.
 | `Core/Modules/MobileMoney/` | unclaimed | `ITransactionSyncService` |
 | `Core/Modules/Cash/` | unclaimed | `TillReconciliationService` |
 | `Core/Modules/AttendantMgmt/` | unclaimed | `Attendant`, auth |
-| Sync endpoint persistence (`Web/Api/TransactionsApi.cs`) | unclaimed | `BackofficeDbContext` |
+| Sync endpoint persistence (`Web/Api/TransactionsApi.cs`) | Builder | `BackofficeDbContext` |
 
 Claim a row by editing this table and the module's own `README.md`, in the same commit that
 starts the work.
