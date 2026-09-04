@@ -1,7 +1,8 @@
 using MAUI_POS_DASH.Web.Api;
 using MAUI_POS_DASH.Web.Components;
 
-internal class Program
+/// <summary>We configure and run the MAUI-POS-DASH back-office Web host.</summary>
+public partial class Program
 {
     private static void Main(string[] args)
     {
@@ -15,11 +16,13 @@ internal class Program
         builder.Services.AddDbContext<BackofficeDbContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("Backoffice")
                 ?? "Host=localhost;Database=mauiposdash_dev;Username=postgres;Password=postgres"));
+        builder.Services.AddSingleton(TimeProvider.System);
+        builder.Services.AddScoped<ITransactionIngestionService, TransactionIngestionService>();
 
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
-        if(app.Environment.IsDevelopment())
+        if (app.Environment.IsDevelopment())
         {
             app.UseWebAssemblyDebugging();
         }

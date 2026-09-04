@@ -1,30 +1,62 @@
 namespace MAUI_POS_DASH.Web.Api;
 
+/// <summary>We map transaction-sync HTTP requests onto the ingestion service.</summary>
 public static class TransactionsApi
 {
     #region Public Methods
-    /// <summary>
-    /// We expose the sync endpoint terminals post pending transactions to. This proves the
-    /// contract compiles end to end — the actual persist-to-Postgres logic is left for whoever
-    /// picks up the Sync side of the back office (see docs/ARCHITECTURE.md).
-    /// </summary>
+    /// <summary>We expose the machine-to-machine endpoint used by terminal sync clients.</summary>
     public static IEndpointRouteBuilder MapTransactionsApi(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/transactions", (List<TransactionDto> transactions) =>
-        {
-            // TODO(Builder): persist these to BackofficeDbContext and return per-transaction results.
-            // We return a Problem body rather than a bare status code — an empty-bodied 4xx/5xx
-            // response gets intercepted by UseStatusCodePagesWithReExecute (see Program.cs) and
-            // re-executed against /not-found with this request's original POST body still
-            // attached, which then fails trying to parse it as a form post instead of JSON.
-            return TypedResults.Problem(statusCode: StatusCodes.Status501NotImplemented, detail: "Transaction sync is not implemented yet.");
-        })
-        // We disable antiforgery here on purpose — this endpoint is called by the MAUI terminal's
-        // plain HttpClient, which has no browser session to carry an antiforgery token in the
-        // first place. CSRF protection doesn't apply to a machine-to-machine sync call.
-        .DisableAntiforgery();
+        app.MapPost("/api/transactions", IngestTransactionsAsync)
+            // The MAUI HttpClient has no browser antiforgery token; terminal authentication is a
+            // separate follow-up boundary and antiforgery does not secure machine clients.
+            .DisableAntiforgery();
 
         return app;
+    }
+    #endregion
+
+    #region Private Methods
+    private static async Task<IResult> IngestTransactionsAsync(
+        List<TransactionDto> transactions,
+        ITransactionIngestionService ingestionService,
+        CancellationToken cancellationToken)
+    {
+        TransactionIngestionResult result =
+            await ingestionService.IngestAsync(transactions, cancellationToken);
+
+        return result.Status switch
+        {
+            TransactionIngestionStatus.Success => TypedResults.Ok(result.Items),
+            TransactionIngestionStatus.InvalidRequest => TypedResults.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Invalid transaction batch",
+                detail: result.Detail),
+            TransactionIngestionStatus.MissingSale => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Referenced sale is missing",
+                detail: WithIds(result.Detail, result.OffendingIds)),
+            TransactionIngestionStatus.TransactionConflict => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Transaction identity conflict",
+                detail: WithIds(result.Detail, result.OffendingIds)),
+            TransactionIngestionStatus.PersistenceConflict => TypedResults.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Transaction persistence conflict",
+                detail: WithIds(result.Detail, result.OffendingIds)),
+            _ => TypedResults.Problem(
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "Unknown transaction ingestion result",
+                detail: "The ingestion service returned an unsupported outcome.")
+        };
+    }
+
+    private static string WithIds(string? detail, IReadOnlyList<Guid> ids)
+    {
+        string prefix = detail ?? "The transaction batch could not be accepted.";
+        return ids.Count == 0
+            ? prefix
+            : $"{prefix} IDs: {string.Join(", ", ids)}.";
     }
     #endregion
 }
