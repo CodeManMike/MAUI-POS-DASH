@@ -8,5 +8,6 @@ public class AttendantConfiguration : IEntityTypeConfiguration<Attendant>
         builder.HasKey(attendant => attendant.Id);
         builder.Property(attendant => attendant.Name).IsRequired().HasMaxLength(100);
         builder.Property(attendant => attendant.PinHash).IsRequired();
+        builder.Property(attendant => attendant.IsActive).IsRequired().HasDefaultValue(true);
     }
 }
