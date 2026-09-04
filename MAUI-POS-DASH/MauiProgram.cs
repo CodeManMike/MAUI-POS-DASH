@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MAUI_POS_DASH.Core.Attendants;
 using MAUI_POS_DASH.Core.Contracts;
 using MAUI_POS_DASH.Core.Persistence;
 using MAUI_POS_DASH.Core.Persistence.Repositories;
@@ -48,6 +49,11 @@ public static class MauiProgram
         services.AddScoped<TillReconciliationService>();
         services.AddScoped<OfflineTransactionQueue>();
         services.AddSingleton<EntityMapper>();
+
+        services.AddScoped<IAttendantRepository, EfAttendantRepository>();
+        services.AddScoped<IAttendantSessionStore, EfAttendantSessionStore>();
+        services.AddScoped<AttendantService>();
+        services.AddSingleton<IPinHasher, Pbkdf2PinHasher>();
 
         services.AddSingleton<ICardReaderService, SimulatedPaxCardReader>();
         services.AddSingleton<IReceiptPrinterService, SimulatedPaxReceiptPrinter>();
