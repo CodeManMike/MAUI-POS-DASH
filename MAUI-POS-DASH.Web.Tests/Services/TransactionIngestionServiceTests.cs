@@ -359,6 +359,29 @@ public class TransactionIngestionServiceTests
         });
         #endregion
     }
+
+    [Test]
+    public async Task IngestAsync_SaveRace_ReturnsPersistenceConflictAndDetachesInsert()
+    {
+        #region Arrange
+        TransactionDto transaction = CreateTransaction(Guid.NewGuid(), _saleId);
+        _dbContext.FailNextSave = true;
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync([transaction]);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.PersistenceConflict));
+            Assert.That(result.Detail, Does.Not.Contain("Synthetic"));
+            Assert.That(_dbContext.ChangeTracker.Entries<Transaction>(), Is.Empty);
+            Assert.That(_dbContext.Transactions.Count(), Is.Zero);
+        });
+        #endregion
+    }
     #endregion
 
     #region Private Methods

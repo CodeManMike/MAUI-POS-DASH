@@ -113,7 +113,23 @@ public class TransactionIngestionService : ITransactionIngestionService
         if (newEntities.Count > 0)
         {
             _dbContext.Transactions.AddRange(newEntities);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            try
+            {
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException)
+            {
+                foreach (Transaction entity in newEntities)
+                {
+                    _dbContext.Entry(entity).State = EntityState.Detached;
+                }
+
+                return Failure(
+                    TransactionIngestionStatus.PersistenceConflict,
+                    newEntities.Select(entity => entity.Id).Order().ToArray(),
+                    "The database changed while this batch was being accepted. Retry the complete batch.");
+            }
         }
 
         return Success(itemResults);
