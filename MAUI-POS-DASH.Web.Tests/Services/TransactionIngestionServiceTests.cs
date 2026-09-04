@@ -160,9 +160,116 @@ public class TransactionIngestionServiceTests
             _sut.IngestAsync([transaction], cancellationSource.Token));
         #endregion
     }
+
+    [Test]
+    public async Task IngestAsync_InvalidTransaction_ReturnsInvalidRequestWithoutWrites()
+    {
+        #region Arrange
+        TransactionDto invalid = CreateTransaction(Guid.Empty, _saleId);
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync([invalid]);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.InvalidRequest));
+            Assert.That(result.Detail, Does.Contain("index 0"));
+            Assert.That(_dbContext.Transactions, Is.Empty);
+        });
+        #endregion
+    }
+
+    [Test]
+    public async Task IngestAsync_DuplicateRequestId_ReturnsInvalidRequestWithoutWrites()
+    {
+        #region Arrange
+        Guid transactionId = Guid.NewGuid();
+        TransactionDto first = CreateTransaction(transactionId, _saleId);
+        TransactionDto duplicate = CreateTransaction(transactionId, _saleId, 75.00m);
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync([first, duplicate]);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.InvalidRequest));
+            Assert.That(result.OffendingIds, Is.EqualTo(new[] { transactionId }));
+            Assert.That(_dbContext.Transactions, Is.Empty);
+        });
+        #endregion
+    }
+
+    [Test]
+    public async Task IngestAsync_MissingSaleInBatch_ReturnsMissingSaleWithoutAnyWrites()
+    {
+        #region Arrange
+        Guid missingSaleId = Guid.NewGuid();
+        TransactionDto valid = CreateTransaction(Guid.NewGuid(), _saleId);
+        TransactionDto missing = CreateTransaction(Guid.NewGuid(), missingSaleId);
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync([valid, missing]);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.MissingSale));
+            Assert.That(result.OffendingIds, Is.EqualTo(new[] { missingSaleId }));
+            Assert.That(_dbContext.Transactions, Is.Empty);
+        });
+        #endregion
+    }
+
+    [TestCaseSource(nameof(InvalidTransactionCases))]
+    public async Task IngestAsync_InvalidField_ReturnsInvalidRequestWithoutWrites(TransactionDto invalid)
+    {
+        #region Arrange
+        TransactionDto transaction = invalid;
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync([transaction]);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.InvalidRequest));
+            Assert.That(_dbContext.Transactions, Is.Empty);
+        });
+        #endregion
+    }
     #endregion
 
     #region Private Methods
+    private static IEnumerable<TestCaseData> InvalidTransactionCases()
+    {
+        Guid saleId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        DateTimeOffset createdAt = ServerNow.AddMinutes(-5);
+
+        yield return new TestCaseData(CreateTransaction(Guid.NewGuid(), Guid.Empty))
+            .SetName("IngestAsync_EmptySaleId_ReturnsInvalidRequestWithoutWrites");
+        yield return new TestCaseData(new TransactionDto(
+                Guid.NewGuid(), saleId, (PaymentMethod)999, 50.00m,
+                TransactionStatus.Pending, createdAt, null))
+            .SetName("IngestAsync_UndefinedPaymentMethod_ReturnsInvalidRequestWithoutWrites");
+        yield return new TestCaseData(CreateTransaction(Guid.NewGuid(), saleId, 0m))
+            .SetName("IngestAsync_ZeroAmount_ReturnsInvalidRequestWithoutWrites");
+        yield return new TestCaseData(CreateTransaction(Guid.NewGuid(), saleId, -1m))
+            .SetName("IngestAsync_NegativeAmount_ReturnsInvalidRequestWithoutWrites");
+        yield return new TestCaseData(CreateTransaction(
+                Guid.NewGuid(), saleId, 50.00m, default(DateTimeOffset)))
+            .SetName("IngestAsync_DefaultCreatedAt_ReturnsInvalidRequestWithoutWrites");
+    }
+
     private static TransactionDto CreateTransaction(
         Guid id,
         Guid saleId,
