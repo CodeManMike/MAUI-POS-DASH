@@ -163,5 +163,85 @@ public class AttendantServiceTests
         Assert.That(active, Has.Count.EqualTo(1));
         #endregion
     }
+
+    [Test]
+    public async Task EnsureDefaultAttendantSeededAsync_EveryAttendantDeactivated_DoesNotReseedDefaultManager()
+    {
+        #region Arrange
+        // We deactivate directly through the DbContext, bypassing AttendantService's
+        // last-active-Manager guard — the point of this test is to pin down seeding
+        // behavior for a terminal that has attendant rows but none of them active,
+        // regardless of how it got into that state.
+        var manager = await _sut.CreateAttendantAsync("Waylon Smithers", "1234", AttendantRole.Manager);
+        var attendant = await _sut.CreateAttendantAsync("Lenny Leonard", "5678", AttendantRole.Attendant);
+        manager.IsActive = false;
+        attendant.IsActive = false;
+        await _dbContext.SaveChangesAsync();
+        #endregion
+
+        #region Act
+        await _sut.EnsureDefaultAttendantSeededAsync();
+        #endregion
+
+        #region Assert
+        var active = await _sut.GetActiveAttendantsAsync();
+        Assert.That(active, Is.Empty);
+        #endregion
+    }
+
+    [Test]
+    public async Task DeactivateAttendantAsync_LastActiveManager_ThrowsAndLeavesAttendantActive()
+    {
+        #region Arrange
+        var manager = await _sut.CreateAttendantAsync("Montgomery Burns", "1234", AttendantRole.Manager);
+        #endregion
+
+        #region Act
+        var exception = Assert.ThrowsAsync<InvalidOperationException>(() => _sut.DeactivateAttendantAsync(manager.Id));
+        #endregion
+
+        #region Assert
+        Assert.That(exception!.Message, Does.Contain("last active Manager"));
+        var active = await _sut.GetActiveAttendantsAsync();
+        Assert.That(active.Any(a => a.Id == manager.Id), Is.True);
+        #endregion
+    }
+
+    [Test]
+    public async Task DeactivateAttendantAsync_ManagerWithAnotherActiveManager_Succeeds()
+    {
+        #region Arrange
+        var firstManager = await _sut.CreateAttendantAsync("Seymour Skinner", "1234", AttendantRole.Manager);
+        await _sut.CreateAttendantAsync("Edna Krabappel", "5678", AttendantRole.Manager);
+        #endregion
+
+        #region Act
+        await _sut.DeactivateAttendantAsync(firstManager.Id);
+        #endregion
+
+        #region Assert
+        var active = await _sut.GetActiveAttendantsAsync();
+        Assert.That(active.Any(a => a.Id == firstManager.Id), Is.False);
+        #endregion
+    }
+
+    [Test]
+    public async Task UpdateAttendantAsync_DemotingLastActiveManager_ThrowsAndLeavesRoleUnchanged()
+    {
+        #region Arrange
+        var manager = await _sut.CreateAttendantAsync("Gary Chalmers", "1234", AttendantRole.Manager);
+        #endregion
+
+        #region Act
+        var exception = Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.UpdateAttendantAsync(manager.Id, manager.Name, AttendantRole.Attendant));
+        #endregion
+
+        #region Assert
+        Assert.That(exception!.Message, Does.Contain("last active Manager"));
+        var active = await _sut.GetActiveAttendantsAsync();
+        Assert.That(active.Single(a => a.Id == manager.Id).Role, Is.EqualTo(AttendantRole.Manager));
+        #endregion
+    }
     #endregion
 }

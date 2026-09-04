@@ -26,6 +26,11 @@ public class EfAttendantRepository : IAttendantRepository
             .ToListAsync(cancellationToken);
     }
 
+    public Task<bool> AnyExistAsync(CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Attendants.AnyAsync(cancellationToken);
+    }
+
     public Task<Attendant?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return _dbContext.Attendants.SingleOrDefaultAsync(attendant => attendant.Id == id, cancellationToken);

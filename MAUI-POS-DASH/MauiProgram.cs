@@ -33,7 +33,10 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
-        return builder.Build();
+        var app = builder.Build();
+        MigrateTerminalDatabase(app);
+
+        return app;
     }
     #endregion
 
@@ -65,6 +68,21 @@ public static class MauiProgram
             // from appsettings once the Sync module is actually built out.
             client.BaseAddress = new Uri("https://localhost:7135/");
         });
+    }
+
+    /// <summary>
+    /// We apply pending migrations to the on-device SQLite file here, once, before the app
+    /// returns from CreateMauiApp — the `dotnet ef database update` commands in README.md only
+    /// ever touch a design-time file on the dev machine, never the real runtime database under
+    /// FileSystem.AppDataDirectory. Without this, a fresh install (or an upgrade that adds a new
+    /// migration) has no schema at all, and the very first page to query TerminalDbContext
+    /// throws. Migrate() is idempotent, so running it on every launch is safe.
+    /// </summary>
+    private static void MigrateTerminalDatabase(MauiApp app)
+    {
+        using var scope = app.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<TerminalDbContext>();
+        dbContext.Database.Migrate();
     }
     #endregion
 }

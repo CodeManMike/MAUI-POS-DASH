@@ -124,17 +124,22 @@ else
             }
             else
             {
-                await AttendantService.UpdateAttendantAsync(_editingId.Value, _formName, _formRole);
+                // We reset the PIN first, not last — ValidatePin runs before any write happens
+                // inside ResetPinAsync, so an invalid PIN throws here with nothing persisted yet.
+                // Doing UpdateAttendantAsync first would commit the name/role change even when
+                // the PIN that came with it turns out to be invalid.
                 if (!string.IsNullOrEmpty(_formPin))
                 {
                     await AttendantService.ResetPinAsync(_editingId.Value, _formPin);
                 }
+
+                await AttendantService.UpdateAttendantAsync(_editingId.Value, _formName, _formRole);
             }
 
             _attendants = await AttendantService.GetActiveAttendantsAsync();
             ResetForm();
         }
-        catch (ArgumentException ex)
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
             _errorMessage = ex.Message;
         }
@@ -142,7 +147,14 @@ else
 
     private async Task DeactivateAsync(Attendant attendant)
     {
-        await AttendantService.DeactivateAttendantAsync(attendant.Id);
-        _attendants = await AttendantService.GetActiveAttendantsAsync();
+        try
+        {
+            await AttendantService.DeactivateAttendantAsync(attendant.Id);
+            _attendants = await AttendantService.GetActiveAttendantsAsync();
+        }
+        catch (InvalidOperationException ex)
+        {
+            _errorMessage = ex.Message;
+        }
     }
 }

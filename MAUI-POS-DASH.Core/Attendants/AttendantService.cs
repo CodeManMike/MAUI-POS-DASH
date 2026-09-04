@@ -80,6 +80,11 @@ public class AttendantService
         var attendant = await _attendantRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new InvalidOperationException($"We can't update attendant {id} — it doesn't exist.");
 
+        if (attendant.Role == AttendantRole.Manager && role != AttendantRole.Manager)
+        {
+            await EnsureNotLastActiveManagerAsync(attendant.Id, cancellationToken);
+        }
+
         attendant.Name = name;
         attendant.Role = role;
 
@@ -103,6 +108,11 @@ public class AttendantService
         var attendant = await _attendantRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new InvalidOperationException($"We can't deactivate attendant {id} — it doesn't exist.");
 
+        if (attendant.Role == AttendantRole.Manager)
+        {
+            await EnsureNotLastActiveManagerAsync(attendant.Id, cancellationToken);
+        }
+
         attendant.IsActive = false;
 
         await _attendantRepository.UpdateAsync(attendant, cancellationToken);
@@ -110,13 +120,15 @@ public class AttendantService
 
     /// <summary>
     /// We seed one default Manager attendant (PIN 0000) the first time this runs against an
-    /// empty attendant list, so a fresh install always has someone who can sign in and create
+    /// empty attendant table, so a fresh install always has someone who can sign in and create
     /// real attendants. Documented in README.md as a known local/demo credential.
     /// </summary>
     public async Task EnsureDefaultAttendantSeededAsync(CancellationToken cancellationToken = default)
     {
-        var existing = await _attendantRepository.GetActiveAttendantsAsync(cancellationToken);
-        if (existing.Count > 0)
+        // We check whether ANY attendant exists, not just active ones — otherwise deactivating
+        // every attendant would silently recreate the default PIN-0000 Manager on the next visit
+        // to the login page, reopening exactly the access an admin just deliberately closed.
+        if (await _attendantRepository.AnyExistAsync(cancellationToken))
         {
             return;
         }
@@ -131,6 +143,23 @@ public class AttendantService
         if (pin.Length is < 4 or > 6 || !pin.All(char.IsAsciiDigit))
         {
             throw new ArgumentException("A PIN must be 4-6 numeric digits.", nameof(pin));
+        }
+    }
+
+    /// <summary>
+    /// We block removing (deactivating, or demoting away from) the last active Manager — without
+    /// this, the terminal could end up with no one able to pass the Manager-only check on the
+    /// Attendants page, and re-seeding wouldn't help since other attendants still exist.
+    /// </summary>
+    private async Task EnsureNotLastActiveManagerAsync(Guid excludingAttendantId, CancellationToken cancellationToken)
+    {
+        var activeAttendants = await _attendantRepository.GetActiveAttendantsAsync(cancellationToken);
+        var hasAnotherActiveManager = activeAttendants.Any(a => a.Id != excludingAttendantId && a.Role == AttendantRole.Manager);
+
+        if (!hasAnotherActiveManager)
+        {
+            throw new InvalidOperationException(
+                "We can't remove the last active Manager — promote another attendant to Manager first.");
         }
     }
     #endregion
