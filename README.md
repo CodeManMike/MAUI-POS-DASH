@@ -41,6 +41,10 @@ Open the solution in Visual Studio / Rider with the Android workload installed, 
 `MAUI-POS-DASH` as the startup project, and run on an emulator or device. It uses a local SQLite
 file under the app's data directory — no external database needed.
 
+On first run, if no attendants exist yet, a default "Manager" attendant is seeded with PIN
+`0000` — a known local/demo credential, not a real one. Sign in with it once to create real
+attendants via the Attendants page, then deactivate or change it.
+
 ## Tests
 
 ```bash

@@ -12,6 +12,7 @@ public partial class EntityMapper
 {
     #region Attendant
     [MapperIgnoreSource(nameof(Attendant.PinHash))]
+    [MapperIgnoreSource(nameof(Attendant.IsActive))]
     public partial AttendantDto ToDto(Attendant attendant);
     #endregion
 

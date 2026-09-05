@@ -18,6 +18,13 @@ public class ShiftService
 
     #region Public Methods
     /// <summary>
+    /// We expose this so pages can find the shift to close without depending on
+    /// IShiftRepository directly — pages talk to services, not repositories.
+    /// </summary>
+    public Task<Shift?> GetActiveShiftAsync(Guid attendantId, CancellationToken cancellationToken = default) =>
+        _shiftRepository.GetActiveShiftAsync(attendantId, cancellationToken);
+
+    /// <summary>
     /// We open a new shift for the given attendant with the counted opening float. We refuse if
     /// that attendant already has an open shift — one attendant, one till, one shift at a time.
     /// </summary>

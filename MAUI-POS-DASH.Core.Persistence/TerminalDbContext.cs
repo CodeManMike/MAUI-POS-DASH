@@ -24,6 +24,8 @@ public class TerminalDbContext : DbContext
     public DbSet<SaleLine> SaleLines => Set<SaleLine>();
 
     public DbSet<Transaction> Transactions => Set<Transaction>();
+
+    public DbSet<AttendantSession> AttendantSessions => Set<AttendantSession>();
     #endregion
 
     #region Overrides
