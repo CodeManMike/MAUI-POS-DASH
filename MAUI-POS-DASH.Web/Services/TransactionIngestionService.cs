@@ -6,6 +6,10 @@ namespace MAUI_POS_DASH.Web.Services;
 public class TransactionIngestionService : ITransactionIngestionService
 {
     #region Fields
+    // numeric(18,2) allows 16 integer digits and 2 fractional digits — this is the largest value
+    // that column can hold without PostgreSQL rounding or overflowing it on insert.
+    private const decimal MaxStorableAmount = 9_999_999_999_999_999.99m;
+
     private readonly BackofficeDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
     #endregion
@@ -143,13 +147,28 @@ public class TransactionIngestionService : ITransactionIngestionService
 
         for (int index = 0; index < transactions.Count; index++)
         {
-            TransactionDto transaction = transactions[index];
+            TransactionDto? transaction = transactions[index];
+
+            if (transaction is null)
+            {
+                return Failure(
+                    TransactionIngestionStatus.InvalidRequest,
+                    [],
+                    $"Transaction at index {index} must not be null.");
+            }
+
             string? detail = transaction switch
             {
                 { Id: var id } when id == Guid.Empty => $"Transaction at index {index} must have a non-empty ID.",
                 { SaleId: var saleId } when saleId == Guid.Empty => $"Transaction at index {index} must reference a Sale.",
                 { Method: var method } when !Enum.IsDefined(method) => $"Transaction at index {index} has an unsupported payment method.",
                 { Amount: <= 0 } => $"Transaction at index {index} must have a positive amount.",
+                // We reject anything that can't round-trip through the numeric(18,2) Amount column
+                // exactly — otherwise Postgres silently rounds it on insert, and a lost-acknowledgement
+                // retry then compares the terminal's original (unrounded) DTO against the rounded value
+                // already stored, turning a should-be-idempotent retry into a permanent conflict.
+                { Amount: var amount } when !CanRoundTripThroughCurrencyColumn(amount) =>
+                    $"Transaction at index {index} has an amount that can't be stored exactly as currency (at most two decimal places, up to {MaxStorableAmount:N2}).",
                 { CreatedAt: var createdAt } when createdAt == default => $"Transaction at index {index} must have a creation timestamp.",
                 _ => null
             };
@@ -169,6 +188,11 @@ public class TransactionIngestionService : ITransactionIngestionService
         }
 
         return null;
+    }
+
+    private static bool CanRoundTripThroughCurrencyColumn(decimal amount)
+    {
+        return amount <= MaxStorableAmount && decimal.Round(amount, 2) == amount;
     }
 
     private static bool MatchesImmutableFields(TransactionDto requested, Transaction existing)

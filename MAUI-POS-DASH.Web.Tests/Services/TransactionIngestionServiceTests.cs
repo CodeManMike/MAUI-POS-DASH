@@ -361,6 +361,30 @@ public class TransactionIngestionServiceTests
     }
 
     [Test]
+    public async Task IngestAsync_NullTransactionEntry_ReturnsInvalidRequestWithoutWrites()
+    {
+        #region Arrange
+        // We build the list with a null element the way System.Text.Json would for `[null]` in the
+        // request body — TransactionDto's non-nullable annotation doesn't stop deserialization from
+        // doing this, so the service has to defend against it explicitly.
+        List<TransactionDto> transactions = [null!];
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync(transactions);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.InvalidRequest));
+            Assert.That(result.Detail, Does.Contain("index 0"));
+            Assert.That(_dbContext.Transactions, Is.Empty);
+        });
+        #endregion
+    }
+
+    [Test]
     public async Task IngestAsync_SaveRace_ReturnsPersistenceConflictAndDetachesInsert()
     {
         #region Arrange
@@ -400,6 +424,10 @@ public class TransactionIngestionServiceTests
             .SetName("IngestAsync_ZeroAmount_ReturnsInvalidRequestWithoutWrites");
         yield return new TestCaseData(CreateTransaction(Guid.NewGuid(), saleId, -1m))
             .SetName("IngestAsync_NegativeAmount_ReturnsInvalidRequestWithoutWrites");
+        yield return new TestCaseData(CreateTransaction(Guid.NewGuid(), saleId, 50.001m))
+            .SetName("IngestAsync_AmountWithMoreThanTwoDecimalPlaces_ReturnsInvalidRequestWithoutWrites");
+        yield return new TestCaseData(CreateTransaction(Guid.NewGuid(), saleId, 10_000_000_000_000_000.00m))
+            .SetName("IngestAsync_AmountExceedingColumnRange_ReturnsInvalidRequestWithoutWrites");
         yield return new TestCaseData(CreateTransaction(
                 Guid.NewGuid(), saleId, 50.00m, default(DateTimeOffset)))
             .SetName("IngestAsync_DefaultCreatedAt_ReturnsInvalidRequestWithoutWrites");
