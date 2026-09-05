@@ -1,6 +1,8 @@
 # Fleet Card module
 
-**Status:** not started. **Owner:** unclaimed.
+**Status:** in progress. **Owner:** Architect.
+
+See `docs/superpowers/specs/2026-09-05-fleet-card-module-design.md` for the design.
 
 Handles fleet card authorization and settlement for a fuel sale — the fleet operator's card is
 tapped/inserted via `ICardReaderService`, the terminal authorizes against the fleet card

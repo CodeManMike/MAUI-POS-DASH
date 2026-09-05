@@ -34,7 +34,7 @@ SDK later means implementing the same interfaces, not rewriting callers.
 
 | Module | Owner | Depends on |
 |---|---|---|
-| `Core/Modules/FleetCard/` | unclaimed | `ICardReaderService`, `PaymentMethod` |
+| `Core/Modules/FleetCard/` | Architect (in progress) | `ICardReaderService`, `PaymentMethod` |
 | `Core/Modules/MobileMoney/` | unclaimed | `ITransactionSyncService` |
 | `Core/Modules/Cash/` | unclaimed | `TillReconciliationService` |
 | `Core/Modules/AttendantMgmt/` | Architect (done) | `Attendant`, auth |
