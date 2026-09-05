@@ -38,7 +38,7 @@ SDK later means implementing the same interfaces, not rewriting callers.
 | `Core/Modules/MobileMoney/` | unclaimed | `ITransactionSyncService` |
 | `Core/Modules/Cash/` | unclaimed | `TillReconciliationService` |
 | `Core/Modules/AttendantMgmt/` | Architect (done) | `Attendant`, auth |
-| Sync endpoint persistence (`Web/Api/TransactionsApi.cs`) | unclaimed | `BackofficeDbContext` |
+| Sync endpoint persistence (`Web/Api/TransactionsApi.cs`) | Builder (done) | `BackofficeDbContext` |
 
 Claim a row by editing this table and the module's own `README.md`, in the same commit that
 starts the work.
@@ -47,8 +47,9 @@ starts the work.
 
 - `FleetCardSale.razor`, `MobileMoneySale.razor`, `CashSale.razor` are "coming soon" pages
   pointing at their module's README.
-- `POST /api/transactions` returns `501 Not Implemented` — it proves the contract compiles, not
-  that it persists anything yet.
+- `POST /api/transactions` persists idempotent transaction batches whose Sales already exist in
+  the back office. Sale/Shift graph synchronization and terminal authentication remain separate
+  follow-up work before the sync boundary is production-complete.
 - The dashboard's `Dashboard.razor` renders fixed sample data, not a live query.
 - Session idle/timeout isn't implemented — a signed-in attendant stays signed in until they
   explicitly sign out (see `docs/superpowers/specs/2026-09-04-attendant-mgmt-design.md` §8).
