@@ -4,6 +4,7 @@ using MAUI_POS_DASH.Core.Attendants;
 using MAUI_POS_DASH.Core.Cash;
 using MAUI_POS_DASH.Core.Contracts;
 using MAUI_POS_DASH.Core.FleetCard;
+using MAUI_POS_DASH.Core.MobileMoney;
 using MAUI_POS_DASH.Core.Persistence;
 using MAUI_POS_DASH.Core.Persistence.Repositories;
 using MAUI_POS_DASH.Core.Sales;
@@ -67,6 +68,10 @@ public static class MauiProgram
         services.AddSingleton<IFleetCardAuthorizationService, SimulatedFleetCardAuthorizationService>();
         services.AddScoped<FleetCardSaleService>();
         services.AddScoped<CashSaleService>();
+
+        services.AddSingleton<IMobileMoneyPaymentService>(
+            _ => new SimulatedMobileMoneyPaymentService(Random.Shared, TimeSpan.FromSeconds(4)));
+        services.AddScoped<MobileMoneySaleService>();
 
         services.AddSingleton<ICardReaderService, SimulatedPaxCardReader>();
         services.AddSingleton<IReceiptPrinterService, SimulatedPaxReceiptPrinter>();
