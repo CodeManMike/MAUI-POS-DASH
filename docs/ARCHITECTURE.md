@@ -54,8 +54,3 @@ starts the work.
 - The dashboard's `Dashboard.razor` renders fixed sample data, not a live query.
 - Session idle/timeout isn't implemented — a signed-in attendant stays signed in until they
   explicitly sign out (see `docs/superpowers/specs/2026-09-04-attendant-mgmt-design.md` §8).
-- `Till.FleetCardTotal` is mapped but nothing updates it yet — `FleetCardSaleService` predates the
-  Till lifecycle Cash introduced and doesn't feed it the way `CashSaleService`/`MobileMoneySaleService`
-  do for their own totals. This is a known, planned follow-up (retrofit `FleetCardSaleService` to
-  match), not an oversight discovered now. Till reconciliation at shift close currently
-  undercounts any shift that took fleet card payments.

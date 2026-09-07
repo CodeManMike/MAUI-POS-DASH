@@ -8,15 +8,17 @@ Handles fleet card authorization and settlement for a fuel sale — the attendan
 the fleet operator's card is tapped via `ICardReaderService`, the terminal authorizes it against
 `IFleetCardAuthorizationService` (currently `SimulatedFleetCardAuthorizationService`, standing in
 for a real fleet-card backend), and on approval a `Sale` (one fixed `"Fuel"` line for the entered
-amount) and a `Transaction` with `PaymentMethod.FleetCard` are persisted via `ISaleRepository`.
-The Transaction is picked up by the existing offline sync queue automatically.
+amount) and a `Transaction` with `PaymentMethod.FleetCard` are persisted via `ISaleRepository`,
+and `Till.FleetCardTotal` is incremented via `ITillRepository`. The Transaction is picked up by
+the existing offline sync queue automatically.
 
 **Real code lives in:** `Core/FleetCard/` (`IFleetCardAuthorizationService`,
-`SimulatedFleetCardAuthorizationService`, `FleetCardSaleService`, `FleetCardSaleResult`) and
-`Core/Sales/ISaleRepository` (shared — Cash and MobileMoney will also depend on this).
+`SimulatedFleetCardAuthorizationService`, `FleetCardSaleService`, `FleetCardSaleResult`),
+`Core/Sales/ISaleRepository` (shared with Cash and MobileMoney), and `Core/Shifts/ITillRepository`
+(shared — added by the Cash module, retrofitted into this one afterward).
 
 **Depends on:** `Core/Devices/ICardReaderService.cs`, `Core/Domain/PaymentMethod.cs`,
-`Core/Sales/ISaleRepository.cs`.
+`Core/Sales/ISaleRepository.cs`, `Core/Shifts/ITillRepository.cs`.
 
 **Out of scope for now:** a real fleet-card backend (the simulator declines ~20% of the time to
 exercise the decline UI path), itemized fuel lines (no product/pump catalog exists yet), and

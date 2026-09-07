@@ -1,5 +1,6 @@
 using MAUI_POS_DASH.Core.Devices;
 using MAUI_POS_DASH.Core.Sales;
+using MAUI_POS_DASH.Core.Shifts;
 
 namespace MAUI_POS_DASH.Core.FleetCard;
 
@@ -13,17 +14,20 @@ public class FleetCardSaleService
     private readonly ICardReaderService _cardReader;
     private readonly IFleetCardAuthorizationService _authorizationService;
     private readonly ISaleRepository _saleRepository;
+    private readonly ITillRepository _tillRepository;
     #endregion
 
     #region Constructor
     public FleetCardSaleService(
         ICardReaderService cardReader,
         IFleetCardAuthorizationService authorizationService,
-        ISaleRepository saleRepository)
+        ISaleRepository saleRepository,
+        ITillRepository tillRepository)
     {
         _cardReader = cardReader;
         _authorizationService = authorizationService;
         _saleRepository = saleRepository;
+        _tillRepository = tillRepository;
     }
     #endregion
 
@@ -86,6 +90,11 @@ public class FleetCardSaleService
         };
 
         await _saleRepository.AddSaleWithTransactionAsync(sale, transaction, cancellationToken);
+
+        var till = await _tillRepository.GetByShiftIdAsync(shiftId, cancellationToken)
+            ?? throw new InvalidOperationException($"Shift {shiftId} has no till — every open shift should have one.");
+        till.FleetCardTotal += amount;
+        await _tillRepository.UpdateAsync(till, cancellationToken);
 
         return new FleetCardSaleResult(FleetCardSaleStatus.Approved, sale, transaction, "Payment approved.");
     }

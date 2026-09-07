@@ -17,5 +17,6 @@ two-step flow — review the till-reconciliation variance, then confirm — inst
 **Depends on:** `Core/Shifts/TillReconciliationService.cs`, `Core/Shifts/ITillRepository.cs`,
 `Core/Sales/ISaleRepository.cs`.
 
-**Known gap:** `FleetCardSaleService` doesn't update `Till.FleetCardTotal` — it predates this
-module's `Till` lifecycle. Reconciliation at shift close currently only reflects cash sales.
+`FleetCardSaleService` and `MobileMoneySaleService` were retrofitted/built to feed
+`Till.FleetCardTotal`/`MobileMoneyTotal` the same way, so till reconciliation at shift close now
+reflects all three payment methods.
