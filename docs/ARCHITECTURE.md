@@ -35,7 +35,7 @@ SDK later means implementing the same interfaces, not rewriting callers.
 | Module | Owner | Depends on |
 |---|---|---|
 | `Core/Modules/FleetCard/` | Architect (done) | `ICardReaderService`, `PaymentMethod` |
-| `Core/Modules/MobileMoney/` | unclaimed | `ITransactionSyncService` |
+| `Core/Modules/MobileMoney/` | Architect (in progress) | `ISaleRepository`, `ITillRepository` |
 | `Core/Modules/Cash/` | Architect (done) | `TillReconciliationService` |
 | `Core/Modules/AttendantMgmt/` | Architect (done) | `Attendant`, auth |
 | Sync endpoint persistence (`Web/Api/TransactionsApi.cs`) | Builder (done) | `BackofficeDbContext` |

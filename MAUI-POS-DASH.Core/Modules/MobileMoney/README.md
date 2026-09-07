@@ -1,14 +1,15 @@
 # Mobile Money module
 
-**Status:** not started. **Owner:** unclaimed.
+**Status:** in progress. **Owner:** Architect.
+
+See `docs/superpowers/specs/2026-09-07-mobile-money-module-design.md` for the design.
 
 Handles mobile money payment for a fuel sale — a QR code or USSD prompt is shown, the customer
-confirms on their phone, and the terminal polls (or is notified) that the payment cleared before
-creating a `Transaction` with `PaymentMethod.MobileMoney`.
+confirms on their phone, and the terminal waits for that confirmation before creating a
+`Transaction` with `PaymentMethod.MobileMoney`.
 
-**Depends on:** `Core/Sync/ITransactionSyncService.cs` (mobile money confirmation is inherently a
-network-round-trip, unlike cash or fleet card).
-
-**To claim this module:** add your name to the Owner line above, update the row in
-`docs/ARCHITECTURE.md`, and open a PR/branch scoped to this folder plus the
-`MAUI-POS-DASH/Components/Pages/MobileMoneySale.razor` placeholder page.
+**Depends on:** `Core/Sales/ISaleRepository.cs`, `Core/Shifts/ITillRepository.cs`. (Earlier
+versions of this README named `Core/Sync/ITransactionSyncService.cs` — that interface is the
+Terminal→Backoffice batch sync built in PR #3, not a fit for confirming one in-progress payment
+with a mobile money provider. This module gets its own confirmation interface instead, shaped
+after FleetCard's `IFleetCardAuthorizationService`.)
