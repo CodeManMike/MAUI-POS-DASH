@@ -7,14 +7,23 @@
 
 <h1>Close Shift</h1>
 
-@if (_shift is not null)
+@if (_shift is not null && _reconciliation is null)
 {
     <label>
         Cash counted
         <input type="number" step="0.01" @bind="_cashCounted" class="mock-input" />
     </label>
 
-    <button class="mock-button" @onclick="CloseShiftAsync">Close Shift</button>
+    <button class="mock-button" @onclick="ReviewAsync">Review</button>
+}
+else if (_reconciliation is not null)
+{
+    <p>Expected cash: R@_reconciliation.ExpectedCash</p>
+    <p>Counted cash: R@_reconciliation.CountedCash</p>
+    <p>Variance: R@_reconciliation.Variance @(_reconciliation.WithinTolerance ? "(within tolerance)" : "(OUT OF TOLERANCE)")</p>
+
+    <button class="mock-button" @onclick="ConfirmCloseAsync">Confirm Close</button>
+    <button class="mock-button" @onclick="() => _reconciliation = null">Recount</button>
 }
 else if (_message is not null)
 {
@@ -25,6 +34,7 @@ else if (_message is not null)
     private Shift? _shift;
     private decimal _cashCounted;
     private string? _message;
+    private ReconciliationResult? _reconciliation;
 
     protected override async Task OnInitializedAsync()
     {
@@ -42,7 +52,12 @@ else if (_message is not null)
         }
     }
 
-    private async Task CloseShiftAsync()
+    private async Task ReviewAsync()
+    {
+        _reconciliation = await ShiftService.PreviewCloseAsync(_shift!, _cashCounted);
+    }
+
+    private async Task ConfirmCloseAsync()
     {
         await ShiftService.CloseShiftAsync(_shift!, _cashCounted);
         Navigation.NavigateTo("/");

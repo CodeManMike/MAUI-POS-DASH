@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using MAUI_POS_DASH.Core.Attendants;
+using MAUI_POS_DASH.Core.Cash;
 using MAUI_POS_DASH.Core.Contracts;
 using MAUI_POS_DASH.Core.FleetCard;
 using MAUI_POS_DASH.Core.Persistence;
@@ -49,6 +50,7 @@ public static class MauiProgram
         services.AddDbContext<TerminalDbContext>(options => options.UseSqlite($"Data Source={dbPath}"));
 
         services.AddScoped<IShiftRepository, EfShiftRepository>();
+        services.AddScoped<ITillRepository, EfTillRepository>();
         services.AddScoped<ITransactionQueueStore, EfTransactionQueueStore>();
         services.AddScoped<ShiftService>();
         services.AddScoped<TillReconciliationService>();
@@ -64,6 +66,7 @@ public static class MauiProgram
         services.AddSingleton(Random.Shared);
         services.AddSingleton<IFleetCardAuthorizationService, SimulatedFleetCardAuthorizationService>();
         services.AddScoped<FleetCardSaleService>();
+        services.AddScoped<CashSaleService>();
 
         services.AddSingleton<ICardReaderService, SimulatedPaxCardReader>();
         services.AddSingleton<IReceiptPrinterService, SimulatedPaxReceiptPrinter>();
