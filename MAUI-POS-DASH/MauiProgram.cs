@@ -2,8 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using MAUI_POS_DASH.Core.Attendants;
 using MAUI_POS_DASH.Core.Contracts;
+using MAUI_POS_DASH.Core.FleetCard;
 using MAUI_POS_DASH.Core.Persistence;
 using MAUI_POS_DASH.Core.Persistence.Repositories;
+using MAUI_POS_DASH.Core.Sales;
 using MAUI_POS_DASH.Core.Shifts;
 using MAUI_POS_DASH.Core.Sync;
 using MAUI_POS_DASH.Platforms.Android.Devices;
@@ -57,6 +59,11 @@ public static class MauiProgram
         services.AddScoped<IAttendantSessionStore, EfAttendantSessionStore>();
         services.AddScoped<AttendantService>();
         services.AddSingleton<IPinHasher, Pbkdf2PinHasher>();
+
+        services.AddScoped<ISaleRepository, EfSaleRepository>();
+        services.AddSingleton(Random.Shared);
+        services.AddSingleton<IFleetCardAuthorizationService, SimulatedFleetCardAuthorizationService>();
+        services.AddScoped<FleetCardSaleService>();
 
         services.AddSingleton<ICardReaderService, SimulatedPaxCardReader>();
         services.AddSingleton<IReceiptPrinterService, SimulatedPaxReceiptPrinter>();

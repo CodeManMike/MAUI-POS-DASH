@@ -34,7 +34,7 @@ SDK later means implementing the same interfaces, not rewriting callers.
 
 | Module | Owner | Depends on |
 |---|---|---|
-| `Core/Modules/FleetCard/` | unclaimed | `ICardReaderService`, `PaymentMethod` |
+| `Core/Modules/FleetCard/` | Architect (done) | `ICardReaderService`, `PaymentMethod` |
 | `Core/Modules/MobileMoney/` | unclaimed | `ITransactionSyncService` |
 | `Core/Modules/Cash/` | unclaimed | `TillReconciliationService` |
 | `Core/Modules/AttendantMgmt/` | Architect (done) | `Attendant`, auth |
@@ -45,8 +45,10 @@ starts the work.
 
 ## What's a placeholder right now
 
-- `FleetCardSale.razor`, `MobileMoneySale.razor`, `CashSale.razor` are "coming soon" pages
-  pointing at their module's README.
+- `MobileMoneySale.razor`, `CashSale.razor` are "coming soon" pages pointing at their module's
+  README. `FleetCardSale.razor` is now a working tap-card flow (see
+  `docs/superpowers/specs/2026-09-05-fleet-card-module-design.md`) — it always records a single
+  fixed `"Fuel"` sale line, since there's no product/pump catalog yet.
 - `POST /api/transactions` persists idempotent transaction batches whose Sales already exist in
   the back office. Sale/Shift graph synchronization and terminal authentication remain separate
   follow-up work before the sync boundary is production-complete.
