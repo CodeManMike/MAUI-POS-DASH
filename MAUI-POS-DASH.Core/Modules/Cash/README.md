@@ -1,6 +1,8 @@
 # Cash module
 
-**Status:** not started. **Owner:** unclaimed.
+**Status:** in progress. **Owner:** Architect.
+
+See `docs/superpowers/specs/2026-09-07-cash-module-design.md` for the design.
 
 Handles cash tender and change calculation for a fuel sale, and feeds `Till.CashTotal` so
 `TillReconciliationService` has something real to reconcile against at shift close.
