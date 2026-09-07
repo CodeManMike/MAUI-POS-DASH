@@ -7,12 +7,19 @@ public class ShiftService
 {
     #region Fields
     private readonly IShiftRepository _shiftRepository;
+    private readonly ITillRepository _tillRepository;
+    private readonly TillReconciliationService _tillReconciliationService;
     #endregion
 
     #region Constructor
-    public ShiftService(IShiftRepository shiftRepository)
+    public ShiftService(
+        IShiftRepository shiftRepository,
+        ITillRepository tillRepository,
+        TillReconciliationService tillReconciliationService)
     {
         _shiftRepository = shiftRepository;
+        _tillRepository = tillRepository;
+        _tillReconciliationService = tillReconciliationService;
     }
     #endregion
 
@@ -45,8 +52,31 @@ public class ShiftService
             OpeningFloat = openingFloat,
             Status = ShiftStatus.Open
         };
+        var openedShift = await _shiftRepository.OpenAsync(shift, cancellationToken);
 
-        return await _shiftRepository.OpenAsync(shift, cancellationToken);
+        var till = new Till
+        {
+            Id = Guid.NewGuid(),
+            ShiftId = openedShift.Id,
+            CashTotal = 0,
+            FleetCardTotal = 0,
+            MobileMoneyTotal = 0
+        };
+        await _tillRepository.CreateAsync(till, cancellationToken);
+
+        return openedShift;
+    }
+
+    /// <summary>
+    /// We compare what the till should have against what the attendant counted, without writing
+    /// anything — ShiftClose.razor shows this before the attendant confirms the close is final.
+    /// </summary>
+    public async Task<ReconciliationResult> PreviewCloseAsync(Shift shift, decimal cashCounted, CancellationToken cancellationToken = default)
+    {
+        var till = await _tillRepository.GetByShiftIdAsync(shift.Id, cancellationToken)
+            ?? throw new InvalidOperationException($"Shift {shift.Id} has no till — every open shift should have one.");
+
+        return _tillReconciliationService.Reconcile(till, cashCounted);
     }
 
     /// <summary>
