@@ -1,9 +1,93 @@
 @page "/cash"
+@inject AttendantService AttendantService
+@inject ShiftService ShiftService
+@inject CashSaleService CashSaleService
+@inject NavigationManager Navigation
 
 <PageTitle>Cash</PageTitle>
 
 <h1>Cash</h1>
 
-<p>This module isn't built yet — see <code>MAUI-POS-DASH.Core/Modules/Cash/README.md</code> for its scope and how to claim it.</p>
+@if (_shift is null && _message is null)
+{
+    <p>Loading…</p>
+}
+else if (_shift is null)
+{
+    <p>@_message</p>
+    <a href="/">Back to terminal home</a>
+}
+else if (_result is null)
+{
+    <label>
+        Amount owed
+        <input type="number" step="0.01" @bind="_amountOwed" class="mock-input" />
+    </label>
 
-<a href="/">Back to terminal home</a>
+    <label>
+        Cash tendered
+        <input type="number" step="0.01" @bind="_amountTendered" class="mock-input" />
+    </label>
+
+    <button class="mock-button" @onclick="ProcessSaleAsync">Take Payment</button>
+
+    @if (_errorMessage is not null)
+    {
+        <p>@_errorMessage</p>
+    }
+}
+else
+{
+    <p>Change due: R@_result.Change</p>
+    <p>Sale @_result.Sale.Id — R@_result.Transaction.Amount</p>
+
+    <button class="mock-button" @onclick="ResetForm">Take Another Payment</button>
+    <a href="/">Back to terminal home</a>
+}
+
+@code {
+    private Shift? _shift;
+    private string? _message;
+    private decimal _amountOwed;
+    private decimal _amountTendered;
+    private string? _errorMessage;
+    private CashSaleResult? _result;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var session = await AttendantService.GetActiveSessionAsync();
+        if (session is null)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        _shift = await ShiftService.GetActiveShiftAsync(session.AttendantId);
+        if (_shift is null)
+        {
+            _message = "There's no open shift — open one before taking payments.";
+        }
+    }
+
+    private async Task ProcessSaleAsync()
+    {
+        _errorMessage = null;
+
+        try
+        {
+            _result = await CashSaleService.ProcessSaleAsync(_shift!.Id, _amountOwed, _amountTendered);
+        }
+        catch (ArgumentException ex)
+        {
+            _errorMessage = ex.Message;
+        }
+    }
+
+    private void ResetForm()
+    {
+        _amountOwed = 0;
+        _amountTendered = 0;
+        _result = null;
+        _errorMessage = null;
+    }
+}

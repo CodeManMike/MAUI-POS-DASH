@@ -1,12 +1,21 @@
 # Cash module
 
-**Status:** not started. **Owner:** unclaimed.
+**Status:** done. **Owner:** Architect.
 
-Handles cash tender and change calculation for a fuel sale, and feeds `Till.CashTotal` so
-`TillReconciliationService` has something real to reconcile against at shift close.
+See `docs/superpowers/specs/2026-09-07-cash-module-design.md` for the design.
 
-**Depends on:** `Core/Shifts/TillReconciliationService.cs`, `Core/Domain/Till.cs`.
+Handles cash tender and change calculation for a fuel sale. The attendant enters the amount owed
+and cash tendered; `CashSaleService` validates the tender covers the amount, persists a `Sale`
+(one fixed `"Fuel"` line) and a `Transaction` with `PaymentMethod.Cash` via `ISaleRepository`, and
+increments `Till.CashTotal` for the shift. This also closes out a longstanding TODO in
+`ShiftService`: every shift now gets a `Till` created when it opens, and closing a shift is now a
+two-step flow — review the till-reconciliation variance, then confirm — instead of closing blind.
 
-**To claim this module:** add your name to the Owner line above, update the row in
-`docs/ARCHITECTURE.md`, and open a PR/branch scoped to this folder plus the
-`MAUI-POS-DASH/Components/Pages/CashSale.razor` placeholder page.
+**Real code lives in:** `Core/Cash/` (`CashSaleService`, `CashSaleResult`) and
+`Core/Shifts/ITillRepository` (shared with `ShiftService`'s new Till lifecycle).
+
+**Depends on:** `Core/Shifts/TillReconciliationService.cs`, `Core/Shifts/ITillRepository.cs`,
+`Core/Sales/ISaleRepository.cs`.
+
+**Known gap:** `FleetCardSaleService` doesn't update `Till.FleetCardTotal` — it predates this
+module's `Till` lifecycle. Reconciliation at shift close currently only reflects cash sales.
