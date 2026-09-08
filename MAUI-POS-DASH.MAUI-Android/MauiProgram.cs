@@ -89,6 +89,24 @@ public static class MauiProgram
 
         services.AddTransient<HomePage>();
         services.AddTransient<HomeViewModel>();
+
+        services.AddTransient<AttendantManagementPage>();
+        services.AddTransient<AttendantManagementViewModel>();
+
+        services.AddTransient<ShiftOpenPage>();
+        services.AddTransient<ShiftOpenViewModel>();
+
+        services.AddTransient<ShiftClosePage>();
+        services.AddTransient<ShiftCloseViewModel>();
+
+        services.AddTransient<FleetCardSalePage>();
+        services.AddTransient<FleetCardSaleViewModel>();
+
+        services.AddTransient<CashSalePage>();
+        services.AddTransient<CashSaleViewModel>();
+
+        services.AddTransient<MobileMoneySalePage>();
+        services.AddTransient<MobileMoneySaleViewModel>();
     }
 
     /// <summary>

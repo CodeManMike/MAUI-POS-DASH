@@ -15,5 +15,11 @@
 
     <ShellContent Route="LoginPage" ContentTemplate="{DataTemplate views:LoginPage}" />
     <ShellContent Route="HomePage" ContentTemplate="{DataTemplate views:HomePage}" />
+    <ShellContent Route="AttendantManagementPage" ContentTemplate="{DataTemplate views:AttendantManagementPage}" />
+    <ShellContent Route="ShiftOpenPage" ContentTemplate="{DataTemplate views:ShiftOpenPage}" />
+    <ShellContent Route="ShiftClosePage" ContentTemplate="{DataTemplate views:ShiftClosePage}" />
+    <ShellContent Route="FleetCardSalePage" ContentTemplate="{DataTemplate views:FleetCardSalePage}" />
+    <ShellContent Route="CashSalePage" ContentTemplate="{DataTemplate views:CashSalePage}" />
+    <ShellContent Route="MobileMoneySalePage" ContentTemplate="{DataTemplate views:MobileMoneySalePage}" />
 
 </Shell>
