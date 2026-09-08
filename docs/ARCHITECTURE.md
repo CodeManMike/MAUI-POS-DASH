@@ -55,3 +55,21 @@ starts the work.
 - The dashboard's `Dashboard.razor` renders fixed sample data, not a live query.
 - Session idle/timeout isn't implemented — a signed-in attendant stays signed in until they
   explicitly sign out (see `docs/superpowers/specs/2026-09-04-attendant-mgmt-design.md` §8).
+- A QA pass over the Sale sync fix and all three payment services found and fixed the concrete
+  bugs it caught, but flagged a few design gaps left as known, deliberate follow-up rather than
+  rushed under deadline pressure:
+  - `Sale.ShiftId` has no FK to `Shift`, and none of `FleetCardSaleService`/`CashSaleService`/
+    `MobileMoneySaleService` check the shift is still `Open` before recording a sale against its
+    Till — a closed/reconciled shift can still silently receive a sale today.
+  - No payment service validates a currency amount has at most 2 decimal places before persisting
+    it to the terminal's SQLite `TerminalDbContext` (unlike `TransactionIngestionService`'s
+    `CanRoundTripThroughCurrencyColumn` check on the backoffice side) — a sub-cent amount can
+    round-trip through SQLite unchanged, then get rounded differently once Postgres's `numeric(18,2)`
+    column receives it on sync, producing a backoffice total that quietly differs from what the
+    terminal itself showed the attendant.
+  - The three payment services (`FleetCardSaleService`, `CashSaleService`, `MobileMoneySaleService`)
+    duplicate the same validate → build Sale/Transaction → persist → update-Till sequence almost
+    verbatim; a shared helper would mean fixing this class of bug once instead of three times (as
+    the Till-check-ordering fix above had to be).
+  - `AttendantService.EnsureNotLastActiveManagerAsync` checks the target attendant's `Role` but not
+    whether they're already `IsActive` — an edge case with low real-world impact.
