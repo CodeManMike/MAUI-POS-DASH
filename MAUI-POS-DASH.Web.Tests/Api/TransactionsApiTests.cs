@@ -93,6 +93,43 @@ public class TransactionsApiTests
     }
 
     [Test]
+    public async Task PostTransactions_NewSaleInRequestBody_PersistsSaleAndTransaction()
+    {
+        #region Arrange
+        // Unlike PostTransactions_ValidBatch_ReturnsPerItemSuccess (which relies on SeedSale's
+        // pre-existing Sale), this Sale exists nowhere until this request — it's the actual bug
+        // this branch fixes: a Sale arriving through the HTTP JSON body must reach the database.
+        Guid newSaleId = Guid.NewGuid();
+        SaleDto sale = new(
+            newSaleId,
+            Guid.NewGuid(),
+            ServerNow.AddMinutes(-10),
+            [new SaleLineDto(Guid.NewGuid(), "Diesel", 22.00m, 10.00m)]);
+        TransactionDto transaction = CreateTransaction(Guid.NewGuid(), newSaleId);
+        TransactionSyncRequest request = new([sale], [transaction]);
+        #endregion
+
+        #region Act
+        HttpResponseMessage response = await _client.PostAsJsonAsync("/api/transactions", request);
+        #endregion
+
+        #region Assert
+        using IServiceScope scope = _factory.Services.CreateScope();
+        BackofficeDbContext dbContext = scope.ServiceProvider.GetRequiredService<BackofficeDbContext>();
+        Sale? persistedSale = await dbContext.Sales
+            .Include(s => s.Lines)
+            .SingleOrDefaultAsync(s => s.Id == newSaleId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+            Assert.That(persistedSale, Is.Not.Null);
+            Assert.That(persistedSale!.Lines.Single().Description, Is.EqualTo("Diesel"));
+            Assert.That(dbContext.Transactions.Any(t => t.Id == transaction.Id), Is.True);
+        });
+        #endregion
+    }
+
+    [Test]
     public async Task PostTransactions_MissingSale_ReturnsBodyBearingConflict()
     {
         #region Arrange
@@ -114,6 +151,32 @@ public class TransactionsApiTests
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Conflict));
             Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("application/problem+json"));
             Assert.That(problem?.Detail, Does.Contain(missingSaleId.ToString()));
+        });
+        #endregion
+    }
+
+    [Test]
+    public async Task PostTransactions_DuplicateSaleIdInBody_ReturnsBodyBearingBadRequest()
+    {
+        #region Arrange
+        Guid duplicateSaleId = Guid.NewGuid();
+        SaleDto first = new(duplicateSaleId, Guid.NewGuid(), ServerNow.AddMinutes(-10), []);
+        SaleDto second = new(duplicateSaleId, Guid.NewGuid(), ServerNow.AddMinutes(-5), []);
+        TransactionDto transaction = CreateTransaction(Guid.NewGuid(), duplicateSaleId);
+        TransactionSyncRequest request = new([first, second], [transaction]);
+        #endregion
+
+        #region Act
+        HttpResponseMessage response = await _client.PostAsJsonAsync("/api/transactions", request);
+        ProblemDetails? problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+            Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("application/problem+json"));
+            Assert.That(problem?.Detail, Does.Contain(duplicateSaleId.ToString()));
         });
         #endregion
     }
