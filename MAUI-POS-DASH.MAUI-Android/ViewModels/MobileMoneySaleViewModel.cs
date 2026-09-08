@@ -27,13 +27,15 @@ public partial class MobileMoneySaleViewModel : ShiftAwareViewModelBase
     #endregion
 
     #region Properties
-    protected override string NoOpenShiftMessage => "There's no open shift — open one before taking payments.";
-
-    public bool IsInputForm => Result is null;
+    public bool IsInputForm => HasOpenShift && Result is null;
 
     public bool IsResult => Result is not null;
 
     public bool IsConfirmed => Result?.Status == MobileMoneySaleStatus.Confirmed;
+
+    public bool CanTakePayment => !IsBusy;
+
+    public string ProcessButtonText => IsBusy ? "Waiting for customer confirmation…" : "Request Payment";
     #endregion
 
     #region Constructor
@@ -47,18 +49,28 @@ public partial class MobileMoneySaleViewModel : ShiftAwareViewModelBase
     }
     #endregion
 
+    #region Protected Methods
+    protected override string NoOpenShiftMessage => "There's no open shift — open one before taking payments.";
+
+    protected override void OnShiftChanged(Shift? currentShift)
+    {
+        OnPropertyChanged(nameof(IsInputForm));
+    }
+
+    protected override void OnBusyChanged(bool isBusy)
+    {
+        OnPropertyChanged(nameof(CanTakePayment));
+        OnPropertyChanged(nameof(ProcessButtonText));
+    }
+    #endregion
+
     #region Commands
     [RelayCommand]
     private async Task ProcessSaleAsync()
     {
-        if (Amount <= 0)
-        {
-            ErrorMessage = "Enter an amount greater than zero.";
-            return;
-        }
-
         ErrorMessage = null;
         IsBusy = true;
+
         try
         {
             Result = await _mobileMoneySaleService.ProcessSaleAsync(CurrentShift!.Id, Amount);

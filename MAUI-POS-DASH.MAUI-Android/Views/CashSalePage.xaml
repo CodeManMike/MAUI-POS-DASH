@@ -14,7 +14,7 @@
 
             <Label Text="Cash Sale" FontSize="24" FontAttributes="Bold" />
 
-            <Label Text="{Binding NoShiftMessage}" IsVisible="{Binding IsNoShift}" />
+            <Label Text="{Binding NoShiftMessage}" IsVisible="{Binding NoOpenShift}" />
 
             <VerticalStackLayout IsVisible="{Binding IsInputForm}" Spacing="12">
                 <Label Text="Amount owed" />

@@ -25,4 +25,19 @@ public abstract partial class BaseViewModel : ObservableObject
     /// </summary>
     public bool HasError => ErrorMessage is not null;
     #endregion
+
+    #region Property Change Hooks
+    /// <summary>
+    /// CommunityToolkit.Mvvm generates a partial OnIsBusyChanged(bool) hook for _isBusy, but it's
+    /// only reachable from the class that declares the property — a subclass can't implement a
+    /// partial method declared here. We implement it once, in the class where it's declared, and
+    /// forward to a differently-named virtual method a subclass CAN override.
+    /// </summary>
+    partial void OnIsBusyChanged(bool value) => OnBusyChanged(value);
+
+    /// <summary>A subclass overrides this to keep a computed property (e.g. button text) in sync with IsBusy.</summary>
+    protected virtual void OnBusyChanged(bool isBusy)
+    {
+    }
+    #endregion
 }

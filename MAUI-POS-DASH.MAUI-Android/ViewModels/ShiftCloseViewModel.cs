@@ -13,12 +13,6 @@ public partial class ShiftCloseViewModel : ShiftAwareViewModelBase
 {
     #region Fields
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(NoOpenShift))]
-    [NotifyPropertyChangedFor(nameof(IsCounting))]
-    [NotifyPropertyChangedFor(nameof(IsReviewing))]
-    private bool _hasOpenShift;
-
-    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsCounting))]
     [NotifyPropertyChangedFor(nameof(IsReviewing))]
     [NotifyPropertyChangedFor(nameof(ToleranceStatus))]
@@ -29,8 +23,6 @@ public partial class ShiftCloseViewModel : ShiftAwareViewModelBase
     #endregion
 
     #region Properties
-    public bool NoOpenShift => !HasOpenShift;
-
     public bool IsCounting => HasOpenShift && Reconciliation is null;
 
     public bool IsReviewing => HasOpenShift && Reconciliation is not null;
@@ -53,10 +45,10 @@ public partial class ShiftCloseViewModel : ShiftAwareViewModelBase
     #region Protected Methods
     protected override string NoOpenShiftMessage => "There's no open shift to close.";
 
-    protected override Task OnShiftReadyAsync()
+    protected override void OnShiftChanged(Shift? currentShift)
     {
-        HasOpenShift = true;
-        return Task.CompletedTask;
+        OnPropertyChanged(nameof(IsCounting));
+        OnPropertyChanged(nameof(IsReviewing));
     }
     #endregion
 

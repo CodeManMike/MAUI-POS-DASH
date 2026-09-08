@@ -14,7 +14,7 @@
 
             <Label Text="Fleet Card" FontSize="24" FontAttributes="Bold" />
 
-            <Label Text="{Binding NoShiftMessage}" IsVisible="{Binding IsBlocked}" />
+            <Label Text="{Binding NoShiftMessage}" IsVisible="{Binding NoOpenShift}" />
 
             <VerticalStackLayout IsVisible="{Binding IsInputForm}" Spacing="12">
                 <Entry Text="{Binding Amount}" Placeholder="Amount" Keyboard="Numeric" />

@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MAUI_POS_DASH.Core.Attendants;
@@ -28,9 +27,7 @@ public partial class FleetCardSaleViewModel : ShiftAwareViewModelBase
     #endregion
 
     #region Properties
-    public bool IsBlocked => CurrentShift is null;
-
-    public bool IsInputForm => CurrentShift is not null && Result is null;
+    public bool IsInputForm => HasOpenShift && Result is null;
 
     public bool IsResultView => Result is not null;
 
@@ -55,25 +52,15 @@ public partial class FleetCardSaleViewModel : ShiftAwareViewModelBase
     #region Protected Methods
     protected override string NoOpenShiftMessage => "There's no open shift — open one before taking payments.";
 
-    /// <summary>
-    /// CurrentShift and IsBusy live on base classes, so their [ObservableProperty] generators can't
-    /// wire NotifyPropertyChangedFor to properties declared down here — we bridge that manually.
-    /// </summary>
-    protected override void OnPropertyChanged(PropertyChangedEventArgs e)
+    protected override void OnShiftChanged(Shift? currentShift)
     {
-        base.OnPropertyChanged(e);
+        OnPropertyChanged(nameof(IsInputForm));
+    }
 
-        switch (e.PropertyName)
-        {
-            case nameof(CurrentShift):
-                OnPropertyChanged(nameof(IsBlocked));
-                OnPropertyChanged(nameof(IsInputForm));
-                break;
-            case nameof(IsBusy):
-                OnPropertyChanged(nameof(CanTakePayment));
-                OnPropertyChanged(nameof(ProcessButtonText));
-                break;
-        }
+    protected override void OnBusyChanged(bool isBusy)
+    {
+        OnPropertyChanged(nameof(CanTakePayment));
+        OnPropertyChanged(nameof(ProcessButtonText));
     }
     #endregion
 

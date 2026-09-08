@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MAUI_POS_DASH.Core.Attendants;
@@ -32,9 +31,7 @@ public partial class CashSaleViewModel : ShiftAwareViewModelBase
     #region Properties
     protected override string NoOpenShiftMessage => "There's no open shift — open one before taking payments.";
 
-    public bool IsNoShift => CurrentShift is null;
-
-    public bool IsInputForm => CurrentShift is not null && Result is null;
+    public bool IsInputForm => HasOpenShift && Result is null;
 
     public bool HasResult => Result is not null;
     #endregion
@@ -48,20 +45,9 @@ public partial class CashSaleViewModel : ShiftAwareViewModelBase
     #endregion
 
     #region Protected Methods
-    /// <summary>
-    /// CurrentShift's setter lives in the sealed OnAuthenticatedAppearingAsync up in
-    /// ShiftAwareViewModelBase, so we can't attach NotifyPropertyChangedFor to it there — we
-    /// forward the notification ourselves instead.
-    /// </summary>
-    protected override void OnPropertyChanged(PropertyChangedEventArgs e)
+    protected override void OnShiftChanged(Shift? currentShift)
     {
-        base.OnPropertyChanged(e);
-
-        if (e.PropertyName == nameof(CurrentShift))
-        {
-            OnPropertyChanged(nameof(IsNoShift));
-            OnPropertyChanged(nameof(IsInputForm));
-        }
+        OnPropertyChanged(nameof(IsInputForm));
     }
     #endregion
 
