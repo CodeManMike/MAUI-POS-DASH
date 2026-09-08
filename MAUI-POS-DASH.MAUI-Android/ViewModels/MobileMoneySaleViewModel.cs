@@ -62,6 +62,8 @@ public partial class MobileMoneySaleViewModel : ShiftAwareViewModelBase
         OnPropertyChanged(nameof(CanTakePayment));
         OnPropertyChanged(nameof(ProcessButtonText));
     }
+
+    protected override void ResetVisitState() => Reset();
     #endregion
 
     #region Commands

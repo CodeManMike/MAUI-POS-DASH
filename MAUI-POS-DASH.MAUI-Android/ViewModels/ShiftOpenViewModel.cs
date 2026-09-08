@@ -27,6 +27,10 @@ public partial class ShiftOpenViewModel : AuthenticatedViewModelBase
     }
     #endregion
 
+    #region Protected Methods
+    protected override void ResetVisitState() => OpeningFloat = 0;
+    #endregion
+
     #region Commands
     [RelayCommand]
     private async Task OpenShiftAsync()

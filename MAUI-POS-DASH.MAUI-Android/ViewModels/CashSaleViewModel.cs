@@ -49,6 +49,8 @@ public partial class CashSaleViewModel : ShiftAwareViewModelBase
     {
         OnPropertyChanged(nameof(IsInputForm));
     }
+
+    protected override void ResetVisitState() => Reset();
     #endregion
 
     #region Commands

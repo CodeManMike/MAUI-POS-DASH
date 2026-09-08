@@ -100,6 +100,8 @@ public partial class AttendantManagementViewModel : AuthenticatedViewModelBase
             }
             else
             {
+                bool isSelfDemotion = EditingId == CurrentAttendantId && FormRole != AttendantRole.Manager;
+
                 // We reset the PIN first, not last — ValidatePin runs before any write happens
                 // inside ResetPinAsync, so an invalid PIN throws here with nothing persisted yet.
                 // Doing UpdateAttendantAsync first would commit the name/role change even when
@@ -110,6 +112,16 @@ public partial class AttendantManagementViewModel : AuthenticatedViewModelBase
                 }
 
                 await AttendantService.UpdateAttendantAsync(EditingId.Value, FormName, FormRole);
+
+                if (isSelfDemotion)
+                {
+                    // The role change is already committed at this point — we revoke Manager-only
+                    // access immediately rather than waiting for the next OnAppearingAsync, since
+                    // Shell keeps this page's ViewModel alive and would otherwise keep showing the
+                    // authorized view to an attendant who no longer qualifies for it.
+                    IsAuthorized = false;
+                    return;
+                }
             }
 
             await LoadAttendantsAsync();

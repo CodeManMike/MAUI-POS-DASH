@@ -90,3 +90,10 @@ starts the work.
 - The dashboard's `Dashboard.razor` renders fixed sample data, not a live query.
 - Session idle/timeout isn't implemented — a signed-in attendant stays signed in until they
   explicitly sign out (see `docs/superpowers/specs/2026-09-04-attendant-mgmt-design.md` §8).
+- A Codex review of the MAUI MVVM app's `AttendantManagementViewModel` flagged that `AttendantService`
+  has no Manager-role check of its own — every method trusts the caller, and the Manager-only gate
+  (`AttendantManagementViewModel.IsAuthorized`) exists only in that one ViewModel's UI state. Nothing
+  currently calls `AttendantService`'s CRUD methods except through that gated screen, so this is a
+  design gap rather than an exploitable one today, but it means a future caller (a second screen, an
+  API surface) would get no protection unless it independently re-implements the same check. Left as
+  known follow-up rather than restructuring the service layer under interview deadline pressure.

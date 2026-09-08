@@ -46,6 +46,13 @@ public abstract partial class AuthenticatedViewModelBase : BaseViewModel, IAppea
         CurrentAttendantName = session.Attendant?.Name;
         CurrentAttendantRole = session.Attendant?.Role ?? AttendantRole.Attendant;
 
+        // Shell keeps each ShellContent's page/ViewModel alive across visits instead of creating a
+        // fresh instance per navigation, so without this reset a previous attendant's unsubmitted
+        // input, in-progress result, or error message would still be showing when the next
+        // attendant lands on the same cached page.
+        ErrorMessage = null;
+        ResetVisitState();
+
         await OnAuthenticatedAppearingAsync();
     }
     #endregion
@@ -53,6 +60,16 @@ public abstract partial class AuthenticatedViewModelBase : BaseViewModel, IAppea
     #region Protected Methods
     /// <summary>We run this only once a signed-in attendant is confirmed present.</summary>
     protected virtual Task OnAuthenticatedAppearingAsync() => Task.CompletedTask;
+
+    /// <summary>
+    /// Clears whatever per-visit state a page collects between one appearing and the next — a
+    /// typed amount, a completed sale result, a half-filled form. The base no-op is correct for
+    /// pages with no such state; override where the ShellContent page-caching behavior above would
+    /// otherwise let one attendant's leftovers show up for the next.
+    /// </summary>
+    protected virtual void ResetVisitState()
+    {
+    }
     #endregion
 
     #region Commands

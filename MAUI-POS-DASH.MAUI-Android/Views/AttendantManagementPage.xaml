@@ -14,11 +14,12 @@
         <VerticalStackLayout Padding="24" Spacing="16">
             <views:StatusHeaderView />
 
+            <Button Text="Back to terminal home" Command="{Binding GoToHomeCommand}" />
+
             <Label Text="Attendants" FontSize="24" FontAttributes="Bold" />
 
             <VerticalStackLayout IsVisible="{Binding IsUnauthorized}" Spacing="12">
                 <Label Text="Managers only — you don't have access to this page." />
-                <Button Text="Back to terminal home" Command="{Binding GoToHomeCommand}" />
             </VerticalStackLayout>
 
             <VerticalStackLayout IsVisible="{Binding IsAuthorized}" Spacing="16">

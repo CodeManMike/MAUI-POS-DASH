@@ -78,9 +78,12 @@ public static class MauiProgram
     }
 
     /// <summary>
-    /// We register every page and ViewModel Transient — Shell resolves a fresh instance each time
-    /// a route is navigated to, matching how each Blazor page in the sibling app got a fresh
-    /// @code block per navigation.
+    /// We register every page and ViewModel Transient so each is only ever resolved once per app
+    /// lifetime — Shell keeps every ShellContent's page/ViewModel alive after that first
+    /// resolution, it doesn't create a fresh instance on later visits to the same route. That's
+    /// unlike the sibling Blazor app, where each page got a fresh @code block per navigation; here
+    /// per-visit state has to be cleared explicitly by the ViewModel itself (see
+    /// AuthenticatedViewModelBase.ResetVisitState).
     /// </summary>
     private static void RegisterPagesAndViewModels(IServiceCollection services)
     {

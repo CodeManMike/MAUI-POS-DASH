@@ -50,6 +50,12 @@ public partial class ShiftCloseViewModel : ShiftAwareViewModelBase
         OnPropertyChanged(nameof(IsCounting));
         OnPropertyChanged(nameof(IsReviewing));
     }
+
+    protected override void ResetVisitState()
+    {
+        Reconciliation = null;
+        CashCounted = 0;
+    }
     #endregion
 
     #region Commands

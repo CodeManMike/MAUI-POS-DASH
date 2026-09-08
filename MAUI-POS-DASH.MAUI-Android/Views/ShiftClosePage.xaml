@@ -12,6 +12,8 @@
         <VerticalStackLayout Padding="24" Spacing="16">
             <views:StatusHeaderView />
 
+            <Button Text="Back to terminal home" Command="{Binding GoToHomeCommand}" />
+
             <Label Text="Close Shift" FontSize="24" FontAttributes="Bold" />
 
             <Label
