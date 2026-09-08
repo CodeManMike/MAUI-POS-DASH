@@ -21,6 +21,8 @@ public abstract partial class AuthenticatedViewModelBase : BaseViewModel, IAppea
 
     #region Properties
     protected Guid CurrentAttendantId { get; private set; }
+
+    protected AttendantRole CurrentAttendantRole { get; private set; }
     #endregion
 
     #region Constructor
@@ -42,6 +44,7 @@ public abstract partial class AuthenticatedViewModelBase : BaseViewModel, IAppea
 
         CurrentAttendantId = session.AttendantId;
         CurrentAttendantName = session.Attendant?.Name;
+        CurrentAttendantRole = session.Attendant?.Role ?? AttendantRole.Attendant;
 
         await OnAuthenticatedAppearingAsync();
     }
