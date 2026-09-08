@@ -4,6 +4,11 @@ A forecourt payment terminal, built as a portfolio/showcase project demonstratin
 (Android) and Blazor working together: a MAUI Blazor Hybrid terminal app and a Blazor Web
 back-office dashboard, sharing a UI component library and a common domain/persistence layer.
 
+The terminal ships as **two separate UI implementations against the same business logic** — the
+primary Blazor Hybrid app, and a plain MAUI XAML+MVVM app (`MAUI-POS-DASH.MAUI-Android`) built to
+demonstrate the same flows through the traditional MAUI pattern. See "UI architecture: two
+implementations" in `docs/ARCHITECTURE.md` for why.
+
 It's scoped and modeled after a real job: an Android terminal on PAX hardware consolidating
 fleet card processing, mobile money, cash handling, shift management, and attendant management
 for a fuel forecourt. See `docs/ARCHITECTURE.md` for the full design and `AGENTS.md` for how the
@@ -12,6 +17,10 @@ team (human and AI) works in this repo.
 ## Projects
 
 - **MAUI-POS-DASH** — the terminal app (MAUI Blazor Hybrid, Android only).
+- **MAUI-POS-DASH.MAUI-Android** — the same terminal's core flows (login, shifts, all three
+  payment methods, attendant management), reimplemented as plain MAUI XAML + MVVM
+  (`CommunityToolkit.Mvvm`), Android only. References `Core`/`Core.Persistence` directly — no
+  duplicated business logic. Deliberately excludes the offline sync queue.
 - **MAUI-POS-DASH.Web** / **MAUI-POS-DASH.Web.Client** — the back-office dashboard (Blazor Web
   App, server + WASM).
 - **MAUI-POS-DASH.Shared** — Razor UI components used by both hosts.
@@ -35,11 +44,13 @@ Needs a local Postgres reachable at the connection string in
 value, never a real credential). Override it with a user-secret or the
 `ConnectionStrings__Backoffice` environment variable rather than editing the committed file.
 
-**MAUI terminal (Android):**
+**MAUI terminal (Android) — either implementation:**
 
-Open the solution in Visual Studio / Rider with the Android workload installed, set
-`MAUI-POS-DASH` as the startup project, and run on an emulator or device. It uses a local SQLite
-file under the app's data directory — no external database needed.
+Open the solution in Visual Studio / Rider with the Android workload installed, set either
+`MAUI-POS-DASH` (Blazor Hybrid) or `MAUI-POS-DASH.MAUI-Android` (XAML + MVVM) as the startup
+project, and run on an emulator or device. Each uses its own local SQLite file under its app's
+data directory — no external database needed, and no conflict between the two since they're
+separate Android app IDs.
 
 On first run, if no attendants exist yet, a default "Manager" attendant is seeded with PIN
 `0000` — a known local/demo credential, not a real one. Sign in with it once to create real
