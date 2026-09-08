@@ -1,3 +1,5 @@
+using MAUI_POS_DASH.Core.Sync;
+
 namespace MAUI_POS_DASH.Web.Tests.Api;
 
 [TestFixture]
@@ -47,10 +49,11 @@ public class TransactionsApiTests
     {
         #region Arrange
         TransactionDto transaction = CreateTransaction(Guid.NewGuid(), _saleId);
+        TransactionSyncRequest request = new([], [transaction]);
         #endregion
 
         #region Act
-        HttpResponseMessage response = await _client.PostAsJsonAsync("/api/transactions", new[] { transaction });
+        HttpResponseMessage response = await _client.PostAsJsonAsync("/api/transactions", request);
         TransactionIngestionItemResult[]? body =
             await response.Content.ReadFromJsonAsync<TransactionIngestionItemResult[]>();
         #endregion
@@ -71,10 +74,11 @@ public class TransactionsApiTests
     {
         #region Arrange
         TransactionDto invalid = CreateTransaction(Guid.Empty, _saleId);
+        TransactionSyncRequest request = new([], [invalid]);
         #endregion
 
         #region Act
-        HttpResponseMessage response = await _client.PostAsJsonAsync("/api/transactions", new[] { invalid });
+        HttpResponseMessage response = await _client.PostAsJsonAsync("/api/transactions", request);
         ProblemDetails? problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
         #endregion
 
@@ -94,10 +98,13 @@ public class TransactionsApiTests
         #region Arrange
         Guid missingSaleId = Guid.NewGuid();
         TransactionDto transaction = CreateTransaction(Guid.NewGuid(), missingSaleId);
+        // The missing Sale is deliberately absent from both the database and the request's Sales
+        // list — this is what exercises MissingSale rather than the new upsert path.
+        TransactionSyncRequest request = new([], [transaction]);
         #endregion
 
         #region Act
-        HttpResponseMessage response = await _client.PostAsJsonAsync("/api/transactions", new[] { transaction });
+        HttpResponseMessage response = await _client.PostAsJsonAsync("/api/transactions", request);
         ProblemDetails? problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
         #endregion
 
@@ -130,10 +137,11 @@ public class TransactionsApiTests
             BaseAddress = new Uri("https://localhost")
         });
         TransactionDto transaction = CreateTransaction(Guid.NewGuid(), _saleId);
+        TransactionSyncRequest request = new([], [transaction]);
         #endregion
 
         #region Act
-        HttpResponseMessage response = await client.PostAsJsonAsync("/api/transactions", new[] { transaction });
+        HttpResponseMessage response = await client.PostAsJsonAsync("/api/transactions", request);
         ProblemDetails? problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
         #endregion
 
@@ -244,6 +252,7 @@ public class TransactionsApiTests
 
         #region Public Methods
         public Task<TransactionIngestionResult> IngestAsync(
+            IReadOnlyList<SaleDto> sales,
             IReadOnlyList<TransactionDto> transactions,
             CancellationToken cancellationToken = default)
         {

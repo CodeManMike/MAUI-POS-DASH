@@ -1,3 +1,5 @@
+using MAUI_POS_DASH.Core.Sync;
+
 namespace MAUI_POS_DASH.Web.Api;
 
 /// <summary>We map transaction-sync HTTP requests onto the ingestion service.</summary>
@@ -18,12 +20,12 @@ public static class TransactionsApi
 
     #region Private Methods
     private static async Task<IResult> IngestTransactionsAsync(
-        List<TransactionDto> transactions,
+        TransactionSyncRequest request,
         ITransactionIngestionService ingestionService,
         CancellationToken cancellationToken)
     {
         TransactionIngestionResult result =
-            await ingestionService.IngestAsync(transactions, cancellationToken);
+            await ingestionService.IngestAsync(request.Sales, request.Transactions, cancellationToken);
 
         return result.Status switch
         {
