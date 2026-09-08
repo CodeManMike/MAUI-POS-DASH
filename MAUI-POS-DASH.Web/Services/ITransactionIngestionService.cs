@@ -11,6 +11,7 @@ public interface ITransactionIngestionService
     /// successful no-ops.
     /// </summary>
     Task<TransactionIngestionResult> IngestAsync(
+        IReadOnlyList<SaleDto> sales,
         IReadOnlyList<TransactionDto> transactions,
         CancellationToken cancellationToken = default);
 }

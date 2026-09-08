@@ -26,6 +26,7 @@ public class TransactionIngestionService : ITransactionIngestionService
     #region Public Methods
     /// <inheritdoc />
     public async Task<TransactionIngestionResult> IngestAsync(
+        IReadOnlyList<SaleDto> sales,
         IReadOnlyList<TransactionDto> transactions,
         CancellationToken cancellationToken = default)
     {
@@ -48,8 +49,13 @@ public class TransactionIngestionService : ITransactionIngestionService
             .Where(sale => requestedSaleIds.Contains(sale.Id))
             .Select(sale => sale.Id)
             .ToArrayAsync(cancellationToken);
+        var existingSaleIdSet = existingSaleIds.ToHashSet();
+
+        // A requested Sale ID is "known" if it's already stored OR included in this request's Sales —
+        // that's what actually fixes MissingSale firing on every first-time sync.
+        HashSet<Guid> knownSaleIds = [.. existingSaleIdSet, .. sales.Select(sale => sale.Id)];
         Guid[] missingSaleIds = requestedSaleIds
-            .Except(existingSaleIds)
+            .Except(knownSaleIds)
             .Order()
             .ToArray();
 
@@ -60,6 +66,23 @@ public class TransactionIngestionService : ITransactionIngestionService
                 missingSaleIds,
                 "One or more referenced sales do not exist.");
         }
+
+        List<Sale> newSales = sales
+            .Where(sale => !existingSaleIdSet.Contains(sale.Id))
+            .Select(sale => new Sale
+            {
+                Id = sale.Id,
+                ShiftId = sale.ShiftId,
+                OccurredAt = sale.OccurredAt,
+                Lines = sale.Lines.Select(line => new SaleLine
+                {
+                    Id = line.Id,
+                    Description = line.Description,
+                    UnitPrice = line.UnitPrice,
+                    Quantity = line.Quantity
+                }).ToList()
+            })
+            .ToList();
 
         Guid[] requestedTransactionIds = transactions
             .Select(transaction => transaction.Id)
@@ -114,8 +137,9 @@ public class TransactionIngestionService : ITransactionIngestionService
                 entity.SyncedAt));
         }
 
-        if (newEntities.Count > 0)
+        if (newEntities.Count > 0 || newSales.Count > 0)
         {
+            _dbContext.Sales.AddRange(newSales);
             _dbContext.Transactions.AddRange(newEntities);
 
             try
@@ -124,6 +148,11 @@ public class TransactionIngestionService : ITransactionIngestionService
             }
             catch (DbUpdateException)
             {
+                foreach (Sale sale in newSales)
+                {
+                    _dbContext.Entry(sale).State = EntityState.Detached;
+                }
+
                 foreach (Transaction entity in newEntities)
                 {
                     _dbContext.Entry(entity).State = EntityState.Detached;
