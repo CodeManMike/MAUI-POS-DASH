@@ -38,7 +38,7 @@ SDK later means implementing the same interfaces, not rewriting callers.
 | `Core/Modules/MobileMoney/` | Architect (done) | `ISaleRepository`, `ITillRepository` |
 | `Core/Modules/Cash/` | Architect (done) | `TillReconciliationService` |
 | `Core/Modules/AttendantMgmt/` | Architect (done) | `Attendant`, auth |
-| Sync endpoint persistence (`Web/Api/TransactionsApi.cs`) | Builder, Sale-sync fix by Architect (in progress) | `BackofficeDbContext` |
+| Sync endpoint persistence (`Web/Api/TransactionsApi.cs`) | Builder, Sale-sync fix by Architect (done) | `BackofficeDbContext` |
 
 Claim a row by editing this table and the module's own `README.md`, in the same commit that
 starts the work.
@@ -48,9 +48,10 @@ starts the work.
 - All three payment modules (`FleetCardSale.razor`, `CashSale.razor`, `MobileMoneySale.razor`) are
   now working flows (see their specs under `docs/superpowers/specs/`) — all three always record a
   single fixed `"Fuel"` sale line, since there's no product/pump catalog yet.
-- `POST /api/transactions` persists idempotent transaction batches whose Sales already exist in
-  the back office. Sale/Shift graph synchronization and terminal authentication remain separate
-  follow-up work before the sync boundary is production-complete.
+- `POST /api/transactions` persists idempotent transaction batches, and Sales now travel alongside
+  Transactions in the same request and are created in the back office if they don't already exist.
+  Shift/Attendant graph synchronization and terminal authentication remain separate follow-up work
+  before the sync boundary is production-complete.
 - The dashboard's `Dashboard.razor` renders fixed sample data, not a live query.
 - Session idle/timeout isn't implemented — a signed-in attendant stays signed in until they
   explicitly sign out (see `docs/superpowers/specs/2026-09-04-attendant-mgmt-design.md` §8).
