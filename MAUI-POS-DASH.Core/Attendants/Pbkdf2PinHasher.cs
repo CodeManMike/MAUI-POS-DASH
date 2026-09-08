@@ -34,8 +34,20 @@ public class Pbkdf2PinHasher : IPinHasher
             return false;
         }
 
-        var salt = Convert.FromBase64String(parts[1]);
-        var expectedHash = Convert.FromBase64String(parts[2]);
+        byte[] salt;
+        byte[] expectedHash;
+        try
+        {
+            salt = Convert.FromBase64String(parts[1]);
+            expectedHash = Convert.FromBase64String(parts[2]);
+        }
+        catch (FormatException)
+        {
+            // A corrupted PinHash (manual data edit, partial write, migration bug) should fail
+            // login like any other bad-hash case, not crash it.
+            return false;
+        }
+
         var actualHash = Rfc2898DeriveBytes.Pbkdf2(pin, salt, iterations, Algorithm, expectedHash.Length);
 
         // We use a fixed-time comparison rather than == or SequenceEqual — a short-circuiting
