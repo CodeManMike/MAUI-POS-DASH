@@ -45,15 +45,7 @@ public abstract partial class ShiftAwareViewModelBase : AuthenticatedViewModelBa
     {
         CurrentShift = await ShiftService.GetActiveShiftAsync(CurrentAttendantId);
         NoShiftMessage = CurrentShift is null ? NoOpenShiftMessage : null;
-
-        if (CurrentShift is not null)
-        {
-            await OnShiftReadyAsync();
-        }
     }
-
-    /// <summary>We run this only once a signed-in attendant with an open shift is confirmed — for async follow-up work, if any.</summary>
-    protected virtual Task OnShiftReadyAsync() => Task.CompletedTask;
     #endregion
 
     #region Property Change Hooks

@@ -62,5 +62,13 @@ public abstract partial class AuthenticatedViewModelBase : BaseViewModel, IAppea
         await AttendantService.LogoutAsync();
         await Shell.Current.GoToAsync($"//{RouteNames.Login}");
     }
+
+    /// <summary>
+    /// Every authenticated page except Home itself uses this for its "Back to terminal home"
+    /// affordance — the Blazor sibling app has the equivalent link on every page it can land on
+    /// without a route forward (no open shift, unauthorized, or a completed sale).
+    /// </summary>
+    [RelayCommand]
+    private Task GoToHomeAsync() => Shell.Current.GoToAsync($"//{RouteNames.Home}");
     #endregion
 }

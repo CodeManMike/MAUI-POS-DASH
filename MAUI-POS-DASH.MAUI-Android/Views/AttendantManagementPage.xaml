@@ -16,9 +16,10 @@
 
             <Label Text="Attendants" FontSize="24" FontAttributes="Bold" />
 
-            <Label
-                Text="Managers only — you don't have access to this page."
-                IsVisible="{Binding IsUnauthorized}" />
+            <VerticalStackLayout IsVisible="{Binding IsUnauthorized}" Spacing="12">
+                <Label Text="Managers only — you don't have access to this page." />
+                <Button Text="Back to terminal home" Command="{Binding GoToHomeCommand}" />
+            </VerticalStackLayout>
 
             <VerticalStackLayout IsVisible="{Binding IsAuthorized}" Spacing="16">
 

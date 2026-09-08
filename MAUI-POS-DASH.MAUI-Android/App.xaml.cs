@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-
-namespace MAUI_POS_DASH.MAUI_Android;
+﻿namespace MAUI_POS_DASH.MAUI_Android;
 
 public partial class App : Application
 {
