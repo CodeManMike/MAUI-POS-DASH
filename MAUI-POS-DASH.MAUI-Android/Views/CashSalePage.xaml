@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="MAUI_POS_DASH.MAUI_Android.Views.CashSalePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:MAUI_POS_DASH.MAUI_Android.ViewModels"
+    xmlns:views="clr-namespace:MAUI_POS_DASH.MAUI_Android.Views"
+    x:DataType="vm:CashSaleViewModel"
+    Title="Cash Sale">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="16">
+            <views:StatusHeaderView />
+
+            <Label Text="Cash Sale" FontSize="24" FontAttributes="Bold" />
+
+            <Label Text="{Binding NoShiftMessage}" IsVisible="{Binding IsNoShift}" />
+
+            <VerticalStackLayout IsVisible="{Binding IsInputForm}" Spacing="12">
+                <Label Text="Amount owed" />
+                <Entry Text="{Binding AmountOwed}" Placeholder="0.00" Keyboard="Numeric" />
+
+                <Label Text="Cash tendered" />
+                <Entry Text="{Binding AmountTendered}" Placeholder="0.00" Keyboard="Numeric" />
+
+                <Button Text="Take Payment" Command="{Binding ProcessSaleCommand}" />
+
+                <Label
+                    Text="{Binding ErrorMessage}"
+                    TextColor="Red"
+                    IsVisible="{Binding HasError}" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout IsVisible="{Binding HasResult}" Spacing="12">
+                <Label
+                    Text="{Binding Result.Change, StringFormat='Change due: R{0}'}"
+                    FontSize="20"
+                    FontAttributes="Bold" />
+                <Label Text="{Binding Result.Sale.Id, StringFormat='Sale {0}'}" />
+                <Label Text="{Binding Result.Transaction.Amount, StringFormat='R{0}'}" />
+
+                <Button Text="Take Another Payment" Command="{Binding ResetCommand}" />
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
