@@ -63,6 +63,12 @@ public class FleetCardSaleService
                 DetailMessage: authorization.DeclineReason ?? "Card declined by the fleet operator.");
         }
 
+        // We look up the Till before writing anything — checking after AddSaleWithTransactionAsync
+        // already committed would leave an orphaned Sale/Transaction with no Till update if a shift
+        // somehow lacks one, since that call has no ambient transaction spanning both writes.
+        var till = await _tillRepository.GetByShiftIdAsync(shiftId, cancellationToken)
+            ?? throw new InvalidOperationException($"Shift {shiftId} has no till — every open shift should have one.");
+
         var sale = new Sale
         {
             Id = Guid.NewGuid(),
@@ -91,8 +97,6 @@ public class FleetCardSaleService
 
         await _saleRepository.AddSaleWithTransactionAsync(sale, transaction, cancellationToken);
 
-        var till = await _tillRepository.GetByShiftIdAsync(shiftId, cancellationToken)
-            ?? throw new InvalidOperationException($"Shift {shiftId} has no till — every open shift should have one.");
         till.FleetCardTotal += amount;
         await _tillRepository.UpdateAsync(till, cancellationToken);
 

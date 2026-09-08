@@ -62,5 +62,21 @@ public class Pbkdf2PinHasherTests
         Assert.That(first, Is.Not.EqualTo(second));
         #endregion
     }
+
+    [TestCase("100000.not-valid-base64!!!.alsoinvalid")]
+    [TestCase("not-a-number.c2FsdA==.aGFzaA==")]
+    [TestCase("100000.onlyonepart")]
+    [TestCase("")]
+    public void Verify_MalformedStoredHash_ReturnsFalseRatherThanThrowing(string malformedHash)
+    {
+        #region Act
+        bool? result = null;
+        Assert.DoesNotThrow(() => result = _sut.Verify("1234", malformedHash));
+        #endregion
+
+        #region Assert
+        Assert.That(result, Is.False);
+        #endregion
+    }
     #endregion
 }

@@ -37,6 +37,11 @@ public class ShiftService
     /// </summary>
     public async Task<Shift> OpenShiftAsync(Guid attendantId, decimal openingFloat, CancellationToken cancellationToken = default)
     {
+        if (openingFloat < 0)
+        {
+            throw new ArgumentException("Opening float can't be negative.", nameof(openingFloat));
+        }
+
         var existing = await _shiftRepository.GetActiveShiftAsync(attendantId, cancellationToken);
         if (existing is not null)
         {
@@ -80,12 +85,23 @@ public class ShiftService
     }
 
     /// <summary>
-    /// We close the shift and record what the attendant counted in the till.
-    /// TODO(Builder/Overmind): once the Cash module lands, run TillReconciliationService here
-    /// and surface the variance before allowing close to complete.
+    /// We close the shift and record what the attendant counted. The caller is expected to have
+    /// already shown the reconciliation via PreviewCloseAsync — this finalizes the close, it
+    /// doesn't recompute or gate on the variance itself.
     /// </summary>
     public Task CloseShiftAsync(Shift shift, decimal closingCashCounted, CancellationToken cancellationToken = default)
     {
+        if (shift.Status != ShiftStatus.Open)
+        {
+            throw new InvalidOperationException(
+                $"We can't close shift {shift.Id} — it isn't open (current status: {shift.Status}).");
+        }
+
+        if (closingCashCounted < 0)
+        {
+            throw new ArgumentException("Closing cash counted can't be negative.", nameof(closingCashCounted));
+        }
+
         shift.ClosedAt = DateTimeOffset.UtcNow;
         shift.ClosingCashCounted = closingCashCounted;
         shift.Status = ShiftStatus.Closed;
