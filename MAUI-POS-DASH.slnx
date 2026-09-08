@@ -2,9 +2,12 @@
   <Project Path="MAUI-POS-DASH.Core.Persistence/MAUI-POS-DASH.Core.Persistence.csproj" />
   <Project Path="MAUI-POS-DASH.Core.Tests/MAUI-POS-DASH.Core.Tests.csproj" />
   <Project Path="MAUI-POS-DASH.Core/MAUI-POS-DASH.Core.csproj" />
+  <Project Path="MAUI-POS-DASH.MAUI-Android/MAUI-POS-DASH.MAUI-Android.csproj" Id="0fea596f-d651-498b-9773-07d39153c65e" />
   <Project Path="MAUI-POS-DASH.Shared/MAUI-POS-DASH.Shared.csproj" />
   <Project Path="MAUI-POS-DASH.Web.Client/MAUI-POS-DASH.Web.Client.csproj" />
   <Project Path="MAUI-POS-DASH.Web.Tests/MAUI-POS-DASH.Web.Tests.csproj" />
   <Project Path="MAUI-POS-DASH.Web/MAUI-POS-DASH.Web.csproj" />
-  <Project Path="MAUI-POS-DASH/MAUI-POS-DASH.csproj" />
+  <Project Path="MAUI-POS-DASH/MAUI-POS-DASH.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
 </Solution>

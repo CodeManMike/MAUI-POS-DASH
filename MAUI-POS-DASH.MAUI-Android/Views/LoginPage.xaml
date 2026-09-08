@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="MAUI_POS_DASH.MAUI_Android.Views.LoginPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:MAUI_POS_DASH.MAUI_Android.ViewModels"
+    xmlns:domain="clr-namespace:MAUI_POS_DASH.Core.Domain;assembly=MAUI-POS-DASH.Core"
+    x:Name="PageRoot"
+    x:DataType="vm:LoginViewModel"
+    Title="Attendant Login">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="16">
+
+            <Label Text="Attendant Login" FontSize="24" FontAttributes="Bold" />
+
+            <CollectionView
+                ItemsSource="{Binding Attendants}"
+                IsVisible="{Binding IsAttendantGrid}"
+                SelectionMode="None">
+                <CollectionView.ItemsLayout>
+                    <GridItemsLayout Orientation="Vertical" Span="2" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="domain:Attendant">
+                        <Button
+                            Margin="4"
+                            Text="{Binding Name}"
+                            Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.SelectAttendantCommand}"
+                            CommandParameter="{Binding .}" />
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <VerticalStackLayout IsVisible="{Binding IsPinEntry}" Spacing="12">
+                <Label Text="{Binding SelectedAttendant.Name, StringFormat='Signing in as {0}'}" />
+                <Entry
+                    Text="{Binding Pin}"
+                    Placeholder="Enter PIN"
+                    IsPassword="True"
+                    MaxLength="6"
+                    Keyboard="Numeric" />
+                <Button Text="Sign in" Command="{Binding SubmitPinCommand}" />
+                <Button Text="Back" Command="{Binding BackCommand}" />
+            </VerticalStackLayout>
+
+            <Label
+                Text="{Binding ErrorMessage}"
+                TextColor="Red"
+                IsVisible="{Binding HasError}" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

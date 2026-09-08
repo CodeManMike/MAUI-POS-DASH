@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    We factor this out so every authenticated page shows the signed-in attendant and a sign-out
+    button the same way, without each page's XAML repeating it. It has no BindingContext of its
+    own — it inherits whatever ViewModel the hosting page is bound to, so it only works correctly
+    inside a page whose ViewModel derives from AuthenticatedViewModelBase.
+-->
+<ContentView
+    x:Class="MAUI_POS_DASH.MAUI_Android.Views.StatusHeaderView"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <Grid ColumnDefinitions="*,Auto" Padding="0,0,0,16">
+        <Label
+            Grid.Column="0"
+            Text="{Binding CurrentAttendantName, StringFormat='Signed in as {0}'}"
+            FontAttributes="Bold"
+            VerticalOptions="Center" />
+        <Button Grid.Column="1" Text="Sign out" Command="{Binding SignOutCommand}" />
+    </Grid>
+</ContentView>
