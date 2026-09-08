@@ -38,7 +38,7 @@ SDK later means implementing the same interfaces, not rewriting callers.
 | `Core/Modules/MobileMoney/` | Architect (done) | `ISaleRepository`, `ITillRepository` |
 | `Core/Modules/Cash/` | Architect (done) | `TillReconciliationService` |
 | `Core/Modules/AttendantMgmt/` | Architect (done) | `Attendant`, auth |
-| Sync endpoint persistence (`Web/Api/TransactionsApi.cs`) | Builder (done) | `BackofficeDbContext` |
+| Sync endpoint persistence (`Web/Api/TransactionsApi.cs`) | Builder, Sale-sync fix by Architect (done) | `BackofficeDbContext` |
 
 Claim a row by editing this table and the module's own `README.md`, in the same commit that
 starts the work.
@@ -48,9 +48,28 @@ starts the work.
 - All three payment modules (`FleetCardSale.razor`, `CashSale.razor`, `MobileMoneySale.razor`) are
   now working flows (see their specs under `docs/superpowers/specs/`) — all three always record a
   single fixed `"Fuel"` sale line, since there's no product/pump catalog yet.
-- `POST /api/transactions` persists idempotent transaction batches whose Sales already exist in
-  the back office. Sale/Shift graph synchronization and terminal authentication remain separate
-  follow-up work before the sync boundary is production-complete.
+- `POST /api/transactions` persists idempotent transaction batches, and Sales now travel alongside
+  Transactions in the same request and are created in the back office if they don't already exist.
+  Shift/Attendant graph synchronization and terminal authentication remain separate follow-up work
+  before the sync boundary is production-complete.
 - The dashboard's `Dashboard.razor` renders fixed sample data, not a live query.
 - Session idle/timeout isn't implemented — a signed-in attendant stays signed in until they
   explicitly sign out (see `docs/superpowers/specs/2026-09-04-attendant-mgmt-design.md` §8).
+- A QA pass over the Sale sync fix and all three payment services found and fixed the concrete
+  bugs it caught, but flagged a few design gaps left as known, deliberate follow-up rather than
+  rushed under deadline pressure:
+  - `Sale.ShiftId` has no FK to `Shift`, and none of `FleetCardSaleService`/`CashSaleService`/
+    `MobileMoneySaleService` check the shift is still `Open` before recording a sale against its
+    Till — a closed/reconciled shift can still silently receive a sale today.
+  - No payment service validates a currency amount has at most 2 decimal places before persisting
+    it to the terminal's SQLite `TerminalDbContext` (unlike `TransactionIngestionService`'s
+    `CanRoundTripThroughCurrencyColumn` check on the backoffice side) — a sub-cent amount can
+    round-trip through SQLite unchanged, then get rounded differently once Postgres's `numeric(18,2)`
+    column receives it on sync, producing a backoffice total that quietly differs from what the
+    terminal itself showed the attendant.
+  - The three payment services (`FleetCardSaleService`, `CashSaleService`, `MobileMoneySaleService`)
+    duplicate the same validate → build Sale/Transaction → persist → update-Till sequence almost
+    verbatim; a shared helper would mean fixing this class of bug once instead of three times (as
+    the Till-check-ordering fix above had to be).
+  - `AttendantService.EnsureNotLastActiveManagerAsync` checks the target attendant's `Role` but not
+    whether they're already `IsActive` — an edge case with low real-world impact.

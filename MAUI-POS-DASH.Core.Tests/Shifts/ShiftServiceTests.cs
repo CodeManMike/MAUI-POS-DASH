@@ -83,6 +83,14 @@ public class ShiftServiceTests
     }
 
     [Test]
+    public void OpenShiftAsync_NegativeOpeningFloat_Throws()
+    {
+        #region Act & Assert
+        Assert.ThrowsAsync<ArgumentException>(() => _sut.OpenShiftAsync(_attendantId, -0.01m));
+        #endregion
+    }
+
+    [Test]
     public void OpenShiftAsync_AttendantAlreadyHasOpenShift_Throws()
     {
         #region Arrange
@@ -187,6 +195,57 @@ public class ShiftServiceTests
 
         #region Act & Assert
         Assert.ThrowsAsync<InvalidOperationException>(() => _sut.PreviewCloseAsync(shift, cashCounted: 0m));
+        #endregion
+    }
+
+    [Test]
+    public async Task CloseShiftAsync_OpenShift_SetsClosedStateAndPersists()
+    {
+        #region Arrange
+        var shift = await _sut.OpenShiftAsync(_attendantId, 100.00m);
+        #endregion
+
+        #region Act
+        await _sut.CloseShiftAsync(shift, closingCashCounted: 480.00m);
+        #endregion
+
+        #region Assert
+        Shift reloaded = await _dbContext.Shifts.SingleAsync(s => s.Id == shift.Id);
+        Assert.Multiple(() =>
+        {
+            Assert.That(reloaded.Status, Is.EqualTo(ShiftStatus.Closed));
+            Assert.That(reloaded.ClosingCashCounted, Is.EqualTo(480.00m));
+            Assert.That(reloaded.ClosedAt, Is.Not.Null);
+        });
+        #endregion
+    }
+
+    [Test]
+    public async Task CloseShiftAsync_ShiftAlreadyClosed_ThrowsAndDoesNotChangeClosedAt()
+    {
+        #region Arrange
+        var shift = await _sut.OpenShiftAsync(_attendantId, 100.00m);
+        await _sut.CloseShiftAsync(shift, closingCashCounted: 100.00m);
+        DateTimeOffset? firstClosedAt = shift.ClosedAt;
+        #endregion
+
+        #region Act & Assert
+        Assert.ThrowsAsync<InvalidOperationException>(() => _sut.CloseShiftAsync(shift, closingCashCounted: 999.00m));
+        Shift reloaded = await _dbContext.Shifts.SingleAsync(s => s.Id == shift.Id);
+        Assert.That(reloaded.ClosedAt, Is.EqualTo(firstClosedAt));
+        Assert.That(reloaded.ClosingCashCounted, Is.EqualTo(100.00m));
+        #endregion
+    }
+
+    [Test]
+    public async Task CloseShiftAsync_NegativeClosingCashCounted_Throws()
+    {
+        #region Arrange
+        var shift = await _sut.OpenShiftAsync(_attendantId, 100.00m);
+        #endregion
+
+        #region Act & Assert
+        Assert.ThrowsAsync<ArgumentException>(() => _sut.CloseShiftAsync(shift, closingCashCounted: -1.00m));
         #endregion
     }
     #endregion

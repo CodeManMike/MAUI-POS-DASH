@@ -153,7 +153,7 @@ public class FleetCardSaleServiceTests
     }
 
     [Test]
-    public void ProcessSaleAsync_ShiftHasNoTill_Throws()
+    public async Task ProcessSaleAsync_ShiftHasNoTill_ThrowsAndPersistsNothing()
     {
         #region Arrange
         Guid otherAttendantId = Guid.NewGuid();
@@ -178,6 +178,10 @@ public class FleetCardSaleServiceTests
 
         #region Act & Assert
         Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ProcessSaleAsync(otherShiftId, 50.00m));
+        // The Till check must happen before anything is written — otherwise a missing Till leaves
+        // an orphaned Sale/Transaction that no Till total will ever reflect.
+        Assert.That(_dbContext.Sales, Is.Empty);
+        Assert.That(_dbContext.Transactions, Is.Empty);
         #endregion
     }
     #endregion

@@ -27,13 +27,22 @@ public class HttpTransactionSyncService : ITransactionSyncService
     #region Public Methods
     public async Task<SyncResult> SyncAsync(IReadOnlyList<Transaction> pendingTransactions, CancellationToken cancellationToken = default)
     {
-        var dtos = pendingTransactions.Select(_mapper.ToDto).ToList();
+        // We build Sales from the pending transactions' already-loaded Sale navigation rather than
+        // querying separately — GetPendingAsync eager-loads it precisely so this can stay one pass.
+        var sales = pendingTransactions
+            .Select(transaction => transaction.Sale)
+            .Where(sale => sale is not null)
+            .DistinctBy(sale => sale!.Id)
+            .Select(sale => _mapper.ToDto(sale!))
+            .ToList();
+        var transactions = pendingTransactions.Select(_mapper.ToDto).ToList();
+        var request = new TransactionSyncRequest(sales, transactions);
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync("api/transactions", dtos, cancellationToken);
+            var response = await _httpClient.PostAsJsonAsync("api/transactions", request, cancellationToken);
             return response.IsSuccessStatusCode
-                ? new SyncResult(SyncStatus.Success, dtos.Count)
+                ? new SyncResult(SyncStatus.Success, transactions.Count)
                 : new SyncResult(SyncStatus.ServerRejected, 0);
         }
         catch (HttpRequestException)

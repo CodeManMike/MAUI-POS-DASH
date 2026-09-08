@@ -83,7 +83,7 @@ public class TransactionIngestionServiceTests
         #endregion
 
         #region Act
-        TransactionIngestionResult result = await _sut.IngestAsync([transaction]);
+        TransactionIngestionResult result = await _sut.IngestAsync([], [transaction]);
         #endregion
 
         #region Assert
@@ -109,7 +109,7 @@ public class TransactionIngestionServiceTests
         #endregion
 
         #region Act
-        TransactionIngestionResult result = await _sut.IngestAsync([first, second]);
+        TransactionIngestionResult result = await _sut.IngestAsync([], [first, second]);
         #endregion
 
         #region Assert
@@ -133,7 +133,7 @@ public class TransactionIngestionServiceTests
         #endregion
 
         #region Act
-        TransactionIngestionResult result = await _sut.IngestAsync(transactions);
+        TransactionIngestionResult result = await _sut.IngestAsync([], transactions);
         #endregion
 
         #region Assert
@@ -142,6 +142,31 @@ public class TransactionIngestionServiceTests
             Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.Success));
             Assert.That(result.Items, Is.Empty);
             Assert.That(_dbContext.Transactions, Is.Empty);
+        });
+        #endregion
+    }
+
+    [Test]
+    public async Task IngestAsync_SalesWithNoTransactions_ReturnsInvalidRequestWithoutWrites()
+    {
+        #region Arrange
+        // A Sale never exists to justify itself in this system — without this guard, this shape
+        // would hit the empty-transactions early return and silently drop the Sale. SetUp already
+        // seeds one unrelated Sale (_saleId), so we assert this new one specifically never lands,
+        // not that the table is empty.
+        Guid newSaleId = Guid.NewGuid();
+        SaleDto sale = CreateSale(newSaleId, new SaleLineDto(Guid.NewGuid(), "Diesel", 22.00m, 10.00m));
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync([sale], []);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.InvalidRequest));
+            Assert.That(_dbContext.Sales.Any(s => s.Id == newSaleId), Is.False);
         });
         #endregion
     }
@@ -157,7 +182,7 @@ public class TransactionIngestionServiceTests
 
         #region Act & Assert
         Assert.ThrowsAsync<OperationCanceledException>(() =>
-            _sut.IngestAsync([transaction], cancellationSource.Token));
+            _sut.IngestAsync([], [transaction], cancellationSource.Token));
         #endregion
     }
 
@@ -169,7 +194,7 @@ public class TransactionIngestionServiceTests
         #endregion
 
         #region Act
-        TransactionIngestionResult result = await _sut.IngestAsync([invalid]);
+        TransactionIngestionResult result = await _sut.IngestAsync([], [invalid]);
         #endregion
 
         #region Assert
@@ -192,7 +217,7 @@ public class TransactionIngestionServiceTests
         #endregion
 
         #region Act
-        TransactionIngestionResult result = await _sut.IngestAsync([first, duplicate]);
+        TransactionIngestionResult result = await _sut.IngestAsync([], [first, duplicate]);
         #endregion
 
         #region Assert
@@ -215,7 +240,7 @@ public class TransactionIngestionServiceTests
         #endregion
 
         #region Act
-        TransactionIngestionResult result = await _sut.IngestAsync([valid, missing]);
+        TransactionIngestionResult result = await _sut.IngestAsync([], [valid, missing]);
         #endregion
 
         #region Assert
@@ -236,7 +261,7 @@ public class TransactionIngestionServiceTests
         #endregion
 
         #region Act
-        TransactionIngestionResult result = await _sut.IngestAsync([transaction]);
+        TransactionIngestionResult result = await _sut.IngestAsync([], [transaction]);
         #endregion
 
         #region Assert
@@ -269,7 +294,7 @@ public class TransactionIngestionServiceTests
         #endregion
 
         #region Act
-        TransactionIngestionResult result = await _sut.IngestAsync([retry]);
+        TransactionIngestionResult result = await _sut.IngestAsync([], [retry]);
         #endregion
 
         #region Assert
@@ -304,7 +329,7 @@ public class TransactionIngestionServiceTests
         #endregion
 
         #region Act
-        TransactionIngestionResult result = await _sut.IngestAsync([existing, added]);
+        TransactionIngestionResult result = await _sut.IngestAsync([], [existing, added]);
         #endregion
 
         #region Assert
@@ -347,7 +372,7 @@ public class TransactionIngestionServiceTests
         #endregion
 
         #region Act
-        TransactionIngestionResult result = await _sut.IngestAsync([conflicting, otherwiseNew]);
+        TransactionIngestionResult result = await _sut.IngestAsync([], [conflicting, otherwiseNew]);
         #endregion
 
         #region Assert
@@ -371,7 +396,7 @@ public class TransactionIngestionServiceTests
         #endregion
 
         #region Act
-        TransactionIngestionResult result = await _sut.IngestAsync(transactions);
+        TransactionIngestionResult result = await _sut.IngestAsync([], transactions);
         #endregion
 
         #region Assert
@@ -393,7 +418,7 @@ public class TransactionIngestionServiceTests
         #endregion
 
         #region Act
-        TransactionIngestionResult result = await _sut.IngestAsync([transaction]);
+        TransactionIngestionResult result = await _sut.IngestAsync([], [transaction]);
         #endregion
 
         #region Assert
@@ -403,6 +428,135 @@ public class TransactionIngestionServiceTests
             Assert.That(result.Detail, Does.Not.Contain("Synthetic"));
             Assert.That(_dbContext.ChangeTracker.Entries<Transaction>(), Is.Empty);
             Assert.That(_dbContext.Transactions.Count(), Is.Zero);
+        });
+        #endregion
+    }
+
+    [Test]
+    public async Task IngestAsync_NewSaleIncludedInRequest_PersistsSaleLinesAndTransaction()
+    {
+        #region Arrange
+        Guid newSaleId = Guid.NewGuid();
+        SaleDto sale = CreateSale(newSaleId, new SaleLineDto(Guid.NewGuid(), "Unleaded 95", 21.50m, 40.00m));
+        TransactionDto transaction = CreateTransaction(Guid.NewGuid(), newSaleId);
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync([sale], [transaction]);
+        #endregion
+
+        #region Assert
+        Sale persistedSale = await _dbContext.Sales
+            .Include(s => s.Lines)
+            .SingleAsync(s => s.Id == newSaleId);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.Success));
+            Assert.That(result.Items.Single().Status, Is.EqualTo(TransactionIngestionItemStatus.Inserted));
+            Assert.That(persistedSale.ShiftId, Is.EqualTo(sale.ShiftId));
+            Assert.That(persistedSale.Lines.Single().Description, Is.EqualTo("Unleaded 95"));
+            Assert.That(_dbContext.Transactions.Count(), Is.EqualTo(1));
+        });
+        #endregion
+    }
+
+    [Test]
+    public async Task IngestAsync_SaleIncludedAgainOnRetry_DoesNotDuplicateSale()
+    {
+        #region Arrange
+        Guid newSaleId = Guid.NewGuid();
+        SaleDto sale = CreateSale(newSaleId, new SaleLineDto(Guid.NewGuid(), "Diesel", 22.00m, 30.00m));
+        TransactionDto transaction = CreateTransaction(Guid.NewGuid(), newSaleId);
+        await _sut.IngestAsync([sale], [transaction]);
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync([sale], [transaction]);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.Success));
+            Assert.That(result.Items.Single().Status, Is.EqualTo(TransactionIngestionItemStatus.AlreadySynced));
+            Assert.That(_dbContext.Sales.Count(s => s.Id == newSaleId), Is.EqualTo(1));
+            Assert.That(_dbContext.Transactions.Count(), Is.EqualTo(1));
+        });
+        #endregion
+    }
+
+    [Test]
+    public async Task IngestAsync_DuplicateSaleIdInRequest_ReturnsInvalidRequestWithoutWrites()
+    {
+        #region Arrange
+        // Two distinct SaleDto entries sharing an Id that isn't already stored anywhere — without
+        // validating this, both land in the same AddRange call and EF's change tracker throws a
+        // raw InvalidOperationException for the duplicate key, bypassing every other failure path's
+        // ProblemDetails contract.
+        Guid duplicateSaleId = Guid.NewGuid();
+        SaleDto first = CreateSale(duplicateSaleId, new SaleLineDto(Guid.NewGuid(), "Diesel", 22.00m, 10.00m));
+        SaleDto second = CreateSale(duplicateSaleId, new SaleLineDto(Guid.NewGuid(), "Unleaded 95", 21.50m, 5.00m));
+        TransactionDto transaction = CreateTransaction(Guid.NewGuid(), duplicateSaleId);
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync([first, second], [transaction]);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.InvalidRequest));
+            Assert.That(result.OffendingIds, Is.EqualTo(new[] { duplicateSaleId }));
+            Assert.That(_dbContext.Sales.Any(s => s.Id == duplicateSaleId), Is.False);
+            Assert.That(_dbContext.Transactions, Is.Empty);
+        });
+        #endregion
+    }
+
+    [Test]
+    public async Task IngestAsync_NullSaleEntry_ReturnsInvalidRequestWithoutWrites()
+    {
+        #region Arrange
+        List<SaleDto> sales = [null!];
+        TransactionDto transaction = CreateTransaction(Guid.NewGuid(), _saleId);
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync(sales, [transaction]);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.InvalidRequest));
+            Assert.That(result.Detail, Does.Contain("index 0"));
+            Assert.That(_dbContext.Transactions, Is.Empty);
+        });
+        #endregion
+    }
+
+    [Test]
+    public async Task IngestAsync_SaleNeitherStoredNorIncludedInSales_ReturnsMissingSaleWithoutAnyWrites()
+    {
+        #region Arrange
+        Guid missingSaleId = Guid.NewGuid();
+        Guid unrelatedSaleId = Guid.NewGuid();
+        SaleDto unrelatedSale = CreateSale(unrelatedSaleId, new SaleLineDto(Guid.NewGuid(), "Diesel", 22.00m, 10.00m));
+        TransactionDto transaction = CreateTransaction(Guid.NewGuid(), missingSaleId);
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync([unrelatedSale], [transaction]);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.MissingSale));
+            Assert.That(result.OffendingIds, Is.EqualTo(new[] { missingSaleId }));
+            Assert.That(_dbContext.Transactions, Is.Empty);
+            Assert.That(_dbContext.Sales.Any(s => s.Id == unrelatedSaleId), Is.False);
         });
         #endregion
     }
@@ -449,6 +603,11 @@ public class TransactionIngestionServiceTests
             status,
             createdAt ?? ServerNow.AddMinutes(-5),
             syncedAt);
+    }
+
+    private static SaleDto CreateSale(Guid id, params SaleLineDto[] lines)
+    {
+        return new SaleDto(id, Guid.NewGuid(), ServerNow.AddMinutes(-10), lines);
     }
     #endregion
 

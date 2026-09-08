@@ -26,9 +26,16 @@ public class TransactionIngestionService : ITransactionIngestionService
     #region Public Methods
     /// <inheritdoc />
     public async Task<TransactionIngestionResult> IngestAsync(
+        IReadOnlyList<SaleDto> sales,
         IReadOnlyList<TransactionDto> transactions,
         CancellationToken cancellationToken = default)
     {
+        TransactionIngestionResult? salesValidationFailure = ValidateSales(sales);
+        if (salesValidationFailure is not null)
+        {
+            return salesValidationFailure;
+        }
+
         TransactionIngestionResult? validationFailure = Validate(transactions);
         if (validationFailure is not null)
         {
@@ -37,6 +44,18 @@ public class TransactionIngestionService : ITransactionIngestionService
 
         if (transactions.Count == 0)
         {
+            // A Sale never exists to justify itself — every Sale in this system is created by the
+            // payment module that also created its Transaction. Sales arriving with no Transactions
+            // is a malformed request, not a no-op: without this check they'd be silently dropped by
+            // the early return below, since nothing past this point ever looks at `sales` again.
+            if (sales.Count > 0)
+            {
+                return Failure(
+                    TransactionIngestionStatus.InvalidRequest,
+                    sales.Select(sale => sale.Id).Order().ToArray(),
+                    "Sales were included without any Transactions to record them against.");
+            }
+
             return Success([]);
         }
 
@@ -48,8 +67,13 @@ public class TransactionIngestionService : ITransactionIngestionService
             .Where(sale => requestedSaleIds.Contains(sale.Id))
             .Select(sale => sale.Id)
             .ToArrayAsync(cancellationToken);
+        var existingSaleIdSet = existingSaleIds.ToHashSet();
+
+        // A requested Sale ID is "known" if it's already stored OR included in this request's Sales —
+        // that's what actually fixes MissingSale firing on every first-time sync.
+        HashSet<Guid> knownSaleIds = [.. existingSaleIdSet, .. sales.Select(sale => sale.Id)];
         Guid[] missingSaleIds = requestedSaleIds
-            .Except(existingSaleIds)
+            .Except(knownSaleIds)
             .Order()
             .ToArray();
 
@@ -60,6 +84,23 @@ public class TransactionIngestionService : ITransactionIngestionService
                 missingSaleIds,
                 "One or more referenced sales do not exist.");
         }
+
+        List<Sale> newSales = sales
+            .Where(sale => !existingSaleIdSet.Contains(sale.Id))
+            .Select(sale => new Sale
+            {
+                Id = sale.Id,
+                ShiftId = sale.ShiftId,
+                OccurredAt = sale.OccurredAt,
+                Lines = sale.Lines.Select(line => new SaleLine
+                {
+                    Id = line.Id,
+                    Description = line.Description,
+                    UnitPrice = line.UnitPrice,
+                    Quantity = line.Quantity
+                }).ToList()
+            })
+            .ToList();
 
         Guid[] requestedTransactionIds = transactions
             .Select(transaction => transaction.Id)
@@ -114,8 +155,9 @@ public class TransactionIngestionService : ITransactionIngestionService
                 entity.SyncedAt));
         }
 
-        if (newEntities.Count > 0)
+        if (newEntities.Count > 0 || newSales.Count > 0)
         {
+            _dbContext.Sales.AddRange(newSales);
             _dbContext.Transactions.AddRange(newEntities);
 
             try
@@ -124,6 +166,11 @@ public class TransactionIngestionService : ITransactionIngestionService
             }
             catch (DbUpdateException)
             {
+                foreach (Sale sale in newSales)
+                {
+                    _dbContext.Entry(sale).State = EntityState.Detached;
+                }
+
                 foreach (Transaction entity in newEntities)
                 {
                     _dbContext.Entry(entity).State = EntityState.Detached;
@@ -141,6 +188,48 @@ public class TransactionIngestionService : ITransactionIngestionService
     #endregion
 
     #region Private Methods
+    /// <summary>
+    /// We check this separately from Validate(transactions) — without it, two SaleDto entries
+    /// sharing an Id that isn't already stored both land in the same AddRange call below, and EF's
+    /// change tracker throws a raw InvalidOperationException for the duplicate key, bypassing every
+    /// other failure path's ProblemDetails contract.
+    /// </summary>
+    private static TransactionIngestionResult? ValidateSales(IReadOnlyList<SaleDto> sales)
+    {
+        HashSet<Guid> saleIds = [];
+
+        for (int index = 0; index < sales.Count; index++)
+        {
+            SaleDto? sale = sales[index];
+
+            if (sale is null)
+            {
+                return Failure(
+                    TransactionIngestionStatus.InvalidRequest,
+                    [],
+                    $"Sale at index {index} must not be null.");
+            }
+
+            if (sale.Id == Guid.Empty)
+            {
+                return Failure(
+                    TransactionIngestionStatus.InvalidRequest,
+                    [],
+                    $"Sale at index {index} must have a non-empty ID.");
+            }
+
+            if (!saleIds.Add(sale.Id))
+            {
+                return Failure(
+                    TransactionIngestionStatus.InvalidRequest,
+                    [sale.Id],
+                    $"Sale {sale.Id} appears more than once in this request.");
+            }
+        }
+
+        return null;
+    }
+
     private static TransactionIngestionResult? Validate(IReadOnlyList<TransactionDto> transactions)
     {
         HashSet<Guid> transactionIds = [];
