@@ -30,6 +30,12 @@ public class TransactionIngestionService : ITransactionIngestionService
         IReadOnlyList<TransactionDto> transactions,
         CancellationToken cancellationToken = default)
     {
+        TransactionIngestionResult? salesValidationFailure = ValidateSales(sales);
+        if (salesValidationFailure is not null)
+        {
+            return salesValidationFailure;
+        }
+
         TransactionIngestionResult? validationFailure = Validate(transactions);
         if (validationFailure is not null)
         {
@@ -170,6 +176,48 @@ public class TransactionIngestionService : ITransactionIngestionService
     #endregion
 
     #region Private Methods
+    /// <summary>
+    /// We check this separately from Validate(transactions) — without it, two SaleDto entries
+    /// sharing an Id that isn't already stored both land in the same AddRange call below, and EF's
+    /// change tracker throws a raw InvalidOperationException for the duplicate key, bypassing every
+    /// other failure path's ProblemDetails contract.
+    /// </summary>
+    private static TransactionIngestionResult? ValidateSales(IReadOnlyList<SaleDto> sales)
+    {
+        HashSet<Guid> saleIds = [];
+
+        for (int index = 0; index < sales.Count; index++)
+        {
+            SaleDto? sale = sales[index];
+
+            if (sale is null)
+            {
+                return Failure(
+                    TransactionIngestionStatus.InvalidRequest,
+                    [],
+                    $"Sale at index {index} must not be null.");
+            }
+
+            if (sale.Id == Guid.Empty)
+            {
+                return Failure(
+                    TransactionIngestionStatus.InvalidRequest,
+                    [],
+                    $"Sale at index {index} must have a non-empty ID.");
+            }
+
+            if (!saleIds.Add(sale.Id))
+            {
+                return Failure(
+                    TransactionIngestionStatus.InvalidRequest,
+                    [sale.Id],
+                    $"Sale {sale.Id} appears more than once in this request.");
+            }
+        }
+
+        return null;
+    }
+
     private static TransactionIngestionResult? Validate(IReadOnlyList<TransactionDto> transactions)
     {
         HashSet<Guid> transactionIds = [];

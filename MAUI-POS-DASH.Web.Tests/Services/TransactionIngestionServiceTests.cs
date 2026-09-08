@@ -461,6 +461,57 @@ public class TransactionIngestionServiceTests
     }
 
     [Test]
+    public async Task IngestAsync_DuplicateSaleIdInRequest_ReturnsInvalidRequestWithoutWrites()
+    {
+        #region Arrange
+        // Two distinct SaleDto entries sharing an Id that isn't already stored anywhere — without
+        // validating this, both land in the same AddRange call and EF's change tracker throws a
+        // raw InvalidOperationException for the duplicate key, bypassing every other failure path's
+        // ProblemDetails contract.
+        Guid duplicateSaleId = Guid.NewGuid();
+        SaleDto first = CreateSale(duplicateSaleId, new SaleLineDto(Guid.NewGuid(), "Diesel", 22.00m, 10.00m));
+        SaleDto second = CreateSale(duplicateSaleId, new SaleLineDto(Guid.NewGuid(), "Unleaded 95", 21.50m, 5.00m));
+        TransactionDto transaction = CreateTransaction(Guid.NewGuid(), duplicateSaleId);
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync([first, second], [transaction]);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.InvalidRequest));
+            Assert.That(result.OffendingIds, Is.EqualTo(new[] { duplicateSaleId }));
+            Assert.That(_dbContext.Sales.Any(s => s.Id == duplicateSaleId), Is.False);
+            Assert.That(_dbContext.Transactions, Is.Empty);
+        });
+        #endregion
+    }
+
+    [Test]
+    public async Task IngestAsync_NullSaleEntry_ReturnsInvalidRequestWithoutWrites()
+    {
+        #region Arrange
+        List<SaleDto> sales = [null!];
+        TransactionDto transaction = CreateTransaction(Guid.NewGuid(), _saleId);
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync(sales, [transaction]);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.InvalidRequest));
+            Assert.That(result.Detail, Does.Contain("index 0"));
+            Assert.That(_dbContext.Transactions, Is.Empty);
+        });
+        #endregion
+    }
+
+    [Test]
     public async Task IngestAsync_SaleNeitherStoredNorIncludedInSales_ReturnsMissingSaleWithoutAnyWrites()
     {
         #region Arrange
