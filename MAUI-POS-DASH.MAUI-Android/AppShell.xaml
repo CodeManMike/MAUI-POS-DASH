@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    We declare every page directly as a ShellContent, each becoming its own implicit ShellItem —
+    that's what makes GoToAsync("//RouteName") work as a clean, stack-resetting jump between them
+    (this is a kiosk-style terminal, not a tabbed app, so the flyout stays disabled; navigation
+    happens entirely through in-page buttons instead).
+-->
+<Shell
+    x:Class="MAUI_POS_DASH.MAUI_Android.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:MAUI_POS_DASH.MAUI_Android.Views"
+    Shell.FlyoutBehavior="Disabled"
+    Title="MAUI-POS-DASH Terminal (MVVM)">
+
+    <ShellContent Route="LoginPage" ContentTemplate="{DataTemplate views:LoginPage}" />
+    <ShellContent Route="HomePage" ContentTemplate="{DataTemplate views:HomePage}" />
+    <ShellContent Route="AttendantManagementPage" ContentTemplate="{DataTemplate views:AttendantManagementPage}" />
+    <ShellContent Route="ShiftOpenPage" ContentTemplate="{DataTemplate views:ShiftOpenPage}" />
+    <ShellContent Route="ShiftClosePage" ContentTemplate="{DataTemplate views:ShiftClosePage}" />
+    <ShellContent Route="FleetCardSalePage" ContentTemplate="{DataTemplate views:FleetCardSalePage}" />
+    <ShellContent Route="CashSalePage" ContentTemplate="{DataTemplate views:CashSalePage}" />
+    <ShellContent Route="MobileMoneySalePage" ContentTemplate="{DataTemplate views:MobileMoneySalePage}" />
+
+</Shell>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="MAUI_POS_DASH.MAUI_Android.Views.FleetCardSalePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:MAUI_POS_DASH.MAUI_Android.ViewModels"
+    xmlns:views="clr-namespace:MAUI_POS_DASH.MAUI_Android.Views"
+    x:DataType="vm:FleetCardSaleViewModel"
+    Title="Fleet Card">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="16">
+            <views:StatusHeaderView />
+
+            <Button Text="Back to terminal home" Command="{Binding GoToHomeCommand}" />
+
+            <Label Text="Fleet Card" FontSize="24" FontAttributes="Bold" />
+
+            <VerticalStackLayout IsVisible="{Binding NoOpenShift}" Spacing="12">
+                <Label Text="{Binding NoShiftMessage}" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout IsVisible="{Binding IsInputForm}" Spacing="12">
+                <Entry Text="{Binding Amount}" Placeholder="Amount" Keyboard="Numeric" />
+                <Button
+                    Text="{Binding ProcessButtonText}"
+                    Command="{Binding ProcessSaleCommand}"
+                    IsEnabled="{Binding CanTakePayment}" />
+                <Label
+                    Text="{Binding ErrorMessage}"
+                    TextColor="Red"
+                    IsVisible="{Binding HasError}" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout IsVisible="{Binding IsResultView}" Spacing="12">
+                <Label Text="{Binding Result.DetailMessage}" />
+                <Label
+                    Text="{Binding Result.Sale.Id, StringFormat='Sale {0}'}"
+                    IsVisible="{Binding IsApproved}" />
+                <Label
+                    Text="{Binding Result.Transaction.Amount, StringFormat='Amount R{0:0.00}'}"
+                    IsVisible="{Binding IsApproved}" />
+                <Button Text="Take Another Payment" Command="{Binding ResetCommand}" />
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

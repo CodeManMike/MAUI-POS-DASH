@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="MAUI_POS_DASH.MAUI_Android.Views.ShiftOpenPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:MAUI_POS_DASH.MAUI_Android.ViewModels"
+    xmlns:views="clr-namespace:MAUI_POS_DASH.MAUI_Android.Views"
+    x:DataType="vm:ShiftOpenViewModel"
+    Title="Open Shift">
+
+    <VerticalStackLayout Padding="24" Spacing="16">
+        <views:StatusHeaderView />
+
+        <Button Text="Back to terminal home" Command="{Binding GoToHomeCommand}" />
+
+        <Label Text="Open Shift" FontSize="24" FontAttributes="Bold" />
+
+        <VerticalStackLayout Spacing="12">
+            <Label Text="Opening float" />
+            <Entry
+                Text="{Binding OpeningFloat}"
+                Placeholder="0.00"
+                Keyboard="Numeric" />
+            <Button Text="Open Shift" Command="{Binding OpenShiftCommand}" />
+        </VerticalStackLayout>
+
+        <Label
+            Text="{Binding ErrorMessage}"
+            TextColor="Red"
+            IsVisible="{Binding HasError}" />
+
+    </VerticalStackLayout>
+</ContentPage>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage
+    x:Class="MAUI_POS_DASH.MAUI_Android.Views.ShiftClosePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:MAUI_POS_DASH.MAUI_Android.ViewModels"
+    xmlns:views="clr-namespace:MAUI_POS_DASH.MAUI_Android.Views"
+    x:DataType="vm:ShiftCloseViewModel"
+    Title="Close Shift">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="16">
+            <views:StatusHeaderView />
+
+            <Button Text="Back to terminal home" Command="{Binding GoToHomeCommand}" />
+
+            <Label Text="Close Shift" FontSize="24" FontAttributes="Bold" />
+
+            <Label
+                Text="{Binding NoShiftMessage}"
+                IsVisible="{Binding NoOpenShift}" />
+
+            <VerticalStackLayout IsVisible="{Binding IsCounting}" Spacing="12">
+                <Label Text="Cash counted" />
+                <Entry
+                    Text="{Binding CashCounted}"
+                    Placeholder="0.00"
+                    Keyboard="Numeric" />
+                <Button Text="Review" Command="{Binding ReviewCommand}" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout IsVisible="{Binding IsReviewing}" Spacing="12">
+                <Label Text="{Binding Reconciliation.ExpectedCash, StringFormat='Expected cash: R{0}'}" />
+                <Label Text="{Binding Reconciliation.CountedCash, StringFormat='Counted cash: R{0}'}" />
+                <Label Text="{Binding Reconciliation.Variance, StringFormat='Variance: R{0}'}" />
+                <Label Text="{Binding ToleranceStatus}" FontAttributes="Bold" />
+                <Button Text="Confirm Close" Command="{Binding ConfirmCloseCommand}" />
+                <Button Text="Recount" Command="{Binding RecountCommand}" />
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
