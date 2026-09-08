@@ -24,6 +24,42 @@ MAUI-POS-DASH.Web.Client       WASM dashboard pages — references Core + Shared
 3. The dashboard (`MAUI-POS-DASH.Web.Client`) reads from `BackofficeDbContext` (Postgres) — only
    what's been synced, never talking to a terminal directly.
 
+## UI architecture: two implementations, one business logic layer
+
+This repo deliberately ships **two** terminal UIs against the same `Core`/`Core.Persistence`
+business logic, to make an architectural choice explicit rather than assumed.
+
+**`MAUI-POS-DASH` (primary) — MAUI Blazor Hybrid.** Pages are Razor components
+(`Components/Pages/*.razor`), the same technology used by the Web dashboard
+(`MAUI-POS-DASH.Web.Client`) via the shared `MAUI-POS-DASH.Shared` component library — one UI
+codebase runs on-device and in the browser. Blazor doesn't use XAML or MVVM; its equivalent
+discipline is enforced here as a hard project rule instead, held since the very first design
+session (see `AGENTS.md`): **service-first, dumb UI**. A page's `@code` block only checks session
+state, binds inputs, calls exactly one `Core` service method per action, and turns the result or a
+caught exception into a displayed message or a navigation — see any page under
+`Components/Pages/` for the pattern (e.g. `FleetCardSale.razor`, `CashSale.razor`,
+`AttendantManagement.razor`). Every business rule, validation, calculation, and persistence
+decision lives in a `Core` service (`FleetCardSaleService`, `CashSaleService`, `AttendantService`,
+etc.), never in a page. This was verified by inspection across every page in the app, not assumed.
+
+**`MAUI-POS-DASH.MAUI-Android` (secondary) — plain MAUI, XAML + MVVM.** Android-only, built to
+demonstrate the same business logic through the traditional MAUI UI pattern: XAML views bound to
+`CommunityToolkit.Mvvm` ViewModels (`[ObservableProperty]`/`[RelayCommand]`, source-generated, no
+hand-written `INotifyPropertyChanged`). It references `MAUI-POS-DASH.Core` and
+`MAUI-POS-DASH.Core.Persistence` directly and duplicates zero business logic — every screen calls
+the exact same service classes the Blazor app calls. Code-behind (`*.xaml.cs`) is limited to
+constructor injection setting `BindingContext` and one `OnAppearing` passthrough to the
+ViewModel; nothing else is allowed there. See `ViewModels/AuthenticatedViewModelBase.cs` and
+`ViewModels/ShiftAwareViewModelBase.cs` for the shared session/shift-guard logic every screen
+would otherwise have repeated. This app intentionally excludes the offline sync queue — it isn't
+what's being demonstrated, and skipping it removes a dependency on a running backend.
+
+Two working implementations of the same terminal, sharing one tested business-logic layer,
+answers "how do you structure your apps" more concretely than either app could alone: it shows
+the same domain logic is genuinely UI-framework-agnostic, and shows deliberate reasoning about
+which UI pattern fits which framework rather than defaulting to one without considering the
+other.
+
 ## Device abstraction
 
 `Core/Devices/*` interfaces are shaped like PAX's real Android SDKs. The current implementations
