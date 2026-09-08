@@ -147,6 +147,31 @@ public class TransactionIngestionServiceTests
     }
 
     [Test]
+    public async Task IngestAsync_SalesWithNoTransactions_ReturnsInvalidRequestWithoutWrites()
+    {
+        #region Arrange
+        // A Sale never exists to justify itself in this system — without this guard, this shape
+        // would hit the empty-transactions early return and silently drop the Sale. SetUp already
+        // seeds one unrelated Sale (_saleId), so we assert this new one specifically never lands,
+        // not that the table is empty.
+        Guid newSaleId = Guid.NewGuid();
+        SaleDto sale = CreateSale(newSaleId, new SaleLineDto(Guid.NewGuid(), "Diesel", 22.00m, 10.00m));
+        #endregion
+
+        #region Act
+        TransactionIngestionResult result = await _sut.IngestAsync([sale], []);
+        #endregion
+
+        #region Assert
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Status, Is.EqualTo(TransactionIngestionStatus.InvalidRequest));
+            Assert.That(_dbContext.Sales.Any(s => s.Id == newSaleId), Is.False);
+        });
+        #endregion
+    }
+
+    [Test]
     public void IngestAsync_CancelledToken_PropagatesCancellation()
     {
         #region Arrange

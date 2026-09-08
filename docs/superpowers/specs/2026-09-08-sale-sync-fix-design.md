@@ -90,8 +90,17 @@ Extends the existing `TransactionIngestionServiceTests` and `TransactionsApiTest
   today's idempotent-retry Transaction path already does.
 - A batch referencing a Sale that's neither pre-existing nor included in `Sales` still returns
   `MissingSale`, unchanged from today's behavior.
-- `HttpTransactionSyncService` test (or its integration coverage): confirms the posted request
-  body actually carries the pending transactions' Sales.
+- `EfTransactionQueueStore.GetPendingAsync`'s new `Include(Sale).ThenInclude(Lines)` — this is the
+  mechanism `HttpTransactionSyncService` depends on to have a Sale to map in the first place.
+
+**Correction from the original version of this section:** it also called for a direct
+`HttpTransactionSyncService` test. `HttpTransactionSyncService` lives in `MAUI-POS-DASH`
+(`net10.0-android`) — there's no NUnit-testable desktop target framework for that project, unlike
+`EfTransactionQueueStore` (in `Core.Persistence`, plain `net10.0`), so a real unit test for it
+isn't feasible with this repo's current test infrastructure. QA flagged this as an unfulfilled
+design promise; the `EfTransactionQueueStore` test above covers the testable half of the same
+mechanism — the Sale-to-DTO mapping and de-duplication in `HttpTransactionSyncService` itself
+remains manually-verified only.
 
 ## Out of scope (explicitly deferred)
 
