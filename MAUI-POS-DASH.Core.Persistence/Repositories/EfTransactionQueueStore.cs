@@ -23,9 +23,13 @@ public class EfTransactionQueueStore : ITransactionQueueStore
     public async Task<IReadOnlyList<Transaction>> GetPendingAsync(CancellationToken cancellationToken = default)
     {
         // List<T> implicitly satisfies IReadOnlyList<T> as a return value, so this awaits and
-        // returns directly with no extra casting.
+        // returns directly with no extra casting. We eager-load the Sale and its Lines here so
+        // HttpTransactionSyncService can build the Sales half of the sync payload without a
+        // second round trip.
         return await _dbContext.Transactions
             .Where(transaction => transaction.Status == TransactionStatus.Pending)
+            .Include(transaction => transaction.Sale!)
+                .ThenInclude(sale => sale.Lines)
             .ToListAsync(cancellationToken);
     }
 
