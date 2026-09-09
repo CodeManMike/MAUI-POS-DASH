@@ -32,6 +32,18 @@ the work, so two contributors don't pick the same module at the same time.
 - **Code organization:** `#region` blocks in every C# file (Fields, Constructor, Properties,
   Public Methods, Private Methods, Events, etc. — whichever apply). `GlobalUsings.cs` per project
   instead of repeating common `using`s per file.
+- **Control flow:** prefer a `switch` statement/expression over an `if`/`else if` chain wherever
+  the branches dispatch on a single value (an enum, a status, a type pattern) — it reads as one
+  decision instead of a sequence of separate checks, and the compiler can flag a missing case.
+  Keep plain `if` for simple guard clauses and boolean conditions where a switch would be forced.
+- **Never nest where able:** prefer early returns and guard clauses over wrapping the rest of a
+  method in `else`. If an `if`/`else` splits a method into two large branches that both eventually
+  do the same trailing work, restructure so each branch handles its own case and returns, rather
+  than falling through to shared code at the bottom of a nested block.
+- **DbContext scope:** when a method or class needs the same `DbContext` more than once, resolve
+  it a single time (constructor injection into a field is the default pattern already used
+  throughout `Core.Persistence`'s repositories) and reuse that one reference for every query in
+  that scope — never re-resolve it from DI per call.
 - **Documentation:** XML docs (`///`) on all public types and members. No top-of-file comment
   headers. Short inline comments only where an interaction is genuinely non-obvious.
 - **Voice:** comments and docs in first person / team voice ("we"/"I"), not third-person or

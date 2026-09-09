@@ -8,6 +8,7 @@
         <span class="terminal-shell__title">MAUI-POS-DASH Terminal</span>
         @if (_signedInAttendantName is not null)
         {
+            <a class="terminal-shell__home" href="/">Home</a>
             <span class="terminal-shell__attendant">@_signedInAttendantName</span>
             <button class="terminal-shell__sign-out" @onclick="SignOutAsync">Sign out</button>
         }

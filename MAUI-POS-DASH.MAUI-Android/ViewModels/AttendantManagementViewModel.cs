@@ -97,31 +97,32 @@ public partial class AttendantManagementViewModel : AuthenticatedViewModelBase
             if (EditingId is null)
             {
                 await AttendantService.CreateAttendantAsync(FormName, FormPin, FormRole);
+                await LoadAttendantsAsync();
+                ResetForm();
+                return;
             }
-            else
+
+            bool isSelfDemotion = EditingId == CurrentAttendantId && FormRole != AttendantRole.Manager;
+
+            // We reset the PIN first, not last — ValidatePin runs before any write happens
+            // inside ResetPinAsync, so an invalid PIN throws here with nothing persisted yet.
+            // Doing UpdateAttendantAsync first would commit the name/role change even when
+            // the PIN that came with it turns out to be invalid.
+            if (!string.IsNullOrEmpty(FormPin))
             {
-                bool isSelfDemotion = EditingId == CurrentAttendantId && FormRole != AttendantRole.Manager;
+                await AttendantService.ResetPinAsync(EditingId.Value, FormPin);
+            }
 
-                // We reset the PIN first, not last — ValidatePin runs before any write happens
-                // inside ResetPinAsync, so an invalid PIN throws here with nothing persisted yet.
-                // Doing UpdateAttendantAsync first would commit the name/role change even when
-                // the PIN that came with it turns out to be invalid.
-                if (!string.IsNullOrEmpty(FormPin))
-                {
-                    await AttendantService.ResetPinAsync(EditingId.Value, FormPin);
-                }
+            await AttendantService.UpdateAttendantAsync(EditingId.Value, FormName, FormRole);
 
-                await AttendantService.UpdateAttendantAsync(EditingId.Value, FormName, FormRole);
-
-                if (isSelfDemotion)
-                {
-                    // The role change is already committed at this point — we revoke Manager-only
-                    // access immediately rather than waiting for the next OnAppearingAsync, since
-                    // Shell keeps this page's ViewModel alive and would otherwise keep showing the
-                    // authorized view to an attendant who no longer qualifies for it.
-                    IsAuthorized = false;
-                    return;
-                }
+            if (isSelfDemotion)
+            {
+                // The role change is already committed at this point — we revoke Manager-only
+                // access immediately rather than waiting for the next OnAppearingAsync, since
+                // Shell keeps this page's ViewModel alive and would otherwise keep showing the
+                // authorized view to an attendant who no longer qualifies for it.
+                IsAuthorized = false;
+                return;
             }
 
             await LoadAttendantsAsync();
