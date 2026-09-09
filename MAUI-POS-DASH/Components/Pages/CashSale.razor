@@ -15,7 +15,6 @@
 else if (_shift is null)
 {
     <p>@_message</p>
-    <a href="/">Back to terminal home</a>
 }
 else if (_result is null)
 {
@@ -42,7 +41,6 @@ else
     <p>Sale @_result.Sale.Id — R@_result.Transaction.Amount</p>
 
     <button class="mock-button" @onclick="ResetForm">Take Another Payment</button>
-    <a href="/">Back to terminal home</a>
 }
 
 @code {

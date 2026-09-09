@@ -12,7 +12,6 @@
 else if (!_isManager)
 {
     <p>Managers only — you don't have access to this page.</p>
-    <a href="/">Back to terminal home</a>
 }
 else
 {
@@ -123,31 +122,32 @@ else
             if (_editingId is null)
             {
                 await AttendantService.CreateAttendantAsync(_formName, _formPin, _formRole);
+                _attendants = await AttendantService.GetActiveAttendantsAsync();
+                ResetForm();
+                return;
             }
-            else
+
+            bool isSelfDemotion = _editingId == _currentAttendantId && _formRole != AttendantRole.Manager;
+
+            // We reset the PIN first, not last — ValidatePin runs before any write happens
+            // inside ResetPinAsync, so an invalid PIN throws here with nothing persisted yet.
+            // Doing UpdateAttendantAsync first would commit the name/role change even when
+            // the PIN that came with it turns out to be invalid.
+            if (!string.IsNullOrEmpty(_formPin))
             {
-                bool isSelfDemotion = _editingId == _currentAttendantId && _formRole != AttendantRole.Manager;
+                await AttendantService.ResetPinAsync(_editingId.Value, _formPin);
+            }
 
-                // We reset the PIN first, not last — ValidatePin runs before any write happens
-                // inside ResetPinAsync, so an invalid PIN throws here with nothing persisted yet.
-                // Doing UpdateAttendantAsync first would commit the name/role change even when
-                // the PIN that came with it turns out to be invalid.
-                if (!string.IsNullOrEmpty(_formPin))
-                {
-                    await AttendantService.ResetPinAsync(_editingId.Value, _formPin);
-                }
+            await AttendantService.UpdateAttendantAsync(_editingId.Value, _formName, _formRole);
 
-                await AttendantService.UpdateAttendantAsync(_editingId.Value, _formName, _formRole);
-
-                if (isSelfDemotion)
-                {
-                    // The role change is already committed at this point — we revoke Manager-only
-                    // access immediately rather than waiting for a future OnInitializedAsync, since
-                    // this component instance stays alive (and _isManager stays true) for the rest
-                    // of this visit otherwise.
-                    _isManager = false;
-                    return;
-                }
+            if (isSelfDemotion)
+            {
+                // The role change is already committed at this point — we revoke Manager-only
+                // access immediately rather than waiting for a future OnInitializedAsync, since
+                // this component instance stays alive (and _isManager stays true) for the rest
+                // of this visit otherwise.
+                _isManager = false;
+                return;
             }
 
             _attendants = await AttendantService.GetActiveAttendantsAsync();

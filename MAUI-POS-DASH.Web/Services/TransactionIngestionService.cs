@@ -42,20 +42,20 @@ public class TransactionIngestionService : ITransactionIngestionService
             return validationFailure;
         }
 
+        // A Sale never exists to justify itself — every Sale in this system is created by the
+        // payment module that also created its Transaction. Sales arriving with no Transactions is
+        // a malformed request, not a no-op: without this check they'd be silently dropped by the
+        // early return below, since nothing past this point ever looks at `sales` again.
+        if (transactions.Count == 0 && sales.Count > 0)
+        {
+            return Failure(
+                TransactionIngestionStatus.InvalidRequest,
+                sales.Select(sale => sale.Id).Order().ToArray(),
+                "Sales were included without any Transactions to record them against.");
+        }
+
         if (transactions.Count == 0)
         {
-            // A Sale never exists to justify itself — every Sale in this system is created by the
-            // payment module that also created its Transaction. Sales arriving with no Transactions
-            // is a malformed request, not a no-op: without this check they'd be silently dropped by
-            // the early return below, since nothing past this point ever looks at `sales` again.
-            if (sales.Count > 0)
-            {
-                return Failure(
-                    TransactionIngestionStatus.InvalidRequest,
-                    sales.Select(sale => sale.Id).Order().ToArray(),
-                    "Sales were included without any Transactions to record them against.");
-            }
-
             return Success([]);
         }
 
