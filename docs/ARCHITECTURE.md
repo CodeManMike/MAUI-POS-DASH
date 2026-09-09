@@ -54,6 +54,11 @@ ViewModel; nothing else is allowed there. See `ViewModels/AuthenticatedViewModel
 would otherwise have repeated. This app intentionally excludes the offline sync queue — it isn't
 what's being demonstrated, and skipping it removes a dependency on a running backend.
 
+There's deliberately no `Models` folder alongside `Views`/`ViewModels` here — the Model half of
+this app's MVVM is `MAUI-POS-DASH.Core`'s domain model (`Attendant`, `Shift`, `Sale`,
+`Transaction`, and each module's result types), shared with the Blazor app rather than redefined
+locally. See the comment in `MAUI-POS-DASH.MAUI-Android/GlobalUsings.cs`.
+
 Two working implementations of the same terminal, sharing one tested business-logic layer,
 answers "how do you structure your apps" more concretely than either app could alone: it shows
 the same domain logic is genuinely UI-framework-agnostic, and shows deliberate reasoning about
