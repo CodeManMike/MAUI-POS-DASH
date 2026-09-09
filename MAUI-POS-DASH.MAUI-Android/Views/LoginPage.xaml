@@ -10,43 +10,48 @@
     Title="Attendant Login">
 
     <ScrollView>
-        <VerticalStackLayout Padding="24" Spacing="16">
+        <VerticalStackLayout Padding="20,28" Spacing="20">
 
-            <Label Text="Attendant Login" FontSize="24" FontAttributes="Bold" />
+            <Label Text="Attendant Login" Style="{StaticResource PageTitle}" />
 
             <CollectionView
                 ItemsSource="{Binding Attendants}"
                 IsVisible="{Binding IsAttendantGrid}"
                 SelectionMode="None">
                 <CollectionView.ItemsLayout>
-                    <GridItemsLayout Orientation="Vertical" Span="2" />
+                    <GridItemsLayout Orientation="Vertical" Span="2" VerticalItemSpacing="12" HorizontalItemSpacing="12" />
                 </CollectionView.ItemsLayout>
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="domain:Attendant">
                         <Button
-                            Margin="4"
                             Text="{Binding Name}"
                             Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.SelectAttendantCommand}"
-                            CommandParameter="{Binding .}" />
+                            CommandParameter="{Binding .}"
+                            Style="{StaticResource NavTile}"
+                            HeightRequest="72" />
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
 
-            <VerticalStackLayout IsVisible="{Binding IsPinEntry}" Spacing="12">
-                <Label Text="{Binding SelectedAttendant.Name, StringFormat='Signing in as {0}'}" />
-                <Entry
-                    Text="{Binding Pin}"
-                    Placeholder="Enter PIN"
-                    IsPassword="True"
-                    MaxLength="6"
-                    Keyboard="Numeric" />
-                <Button Text="Sign in" Command="{Binding SubmitPinCommand}" />
-                <Button Text="Back" Command="{Binding BackCommand}" />
-            </VerticalStackLayout>
+            <Border Style="{StaticResource Card}" IsVisible="{Binding IsPinEntry}">
+                <VerticalStackLayout Spacing="14">
+                    <Label Text="{Binding SelectedAttendant.Name, StringFormat='Signing in as {0}'}" Style="{StaticResource FieldLabel}" />
+                    <Border Style="{StaticResource FieldFrame}">
+                        <Entry
+                            Text="{Binding Pin}"
+                            Placeholder="Enter PIN"
+                            IsPassword="True"
+                            MaxLength="6"
+                            Keyboard="Numeric" />
+                    </Border>
+                    <Button Text="Sign in" Command="{Binding SubmitPinCommand}" />
+                    <Button Text="Back" Command="{Binding BackCommand}" Style="{StaticResource SecondaryButton}" />
+                </VerticalStackLayout>
+            </Border>
 
             <Label
                 Text="{Binding ErrorMessage}"
-                TextColor="Red"
+                Style="{StaticResource ErrorLabel}"
                 IsVisible="{Binding HasError}" />
 
         </VerticalStackLayout>

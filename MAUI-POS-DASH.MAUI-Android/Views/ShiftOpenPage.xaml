@@ -8,26 +8,31 @@
     x:DataType="vm:ShiftOpenViewModel"
     Title="Open Shift">
 
-    <VerticalStackLayout Padding="24" Spacing="16">
-        <views:StatusHeaderView />
+    <Grid RowDefinitions="Auto,*">
+        <views:StatusHeaderView Grid.Row="0" />
 
-        <Button Text="Back to terminal home" Command="{Binding GoToHomeCommand}" />
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,24" Spacing="18">
+                <Label Text="Open Shift" Style="{StaticResource PageTitle}" />
 
-        <Label Text="Open Shift" FontSize="24" FontAttributes="Bold" />
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="14">
+                        <Label Text="Opening float" Style="{StaticResource FieldLabel}" />
+                        <Border Style="{StaticResource FieldFrame}">
+                            <Entry
+                                Text="{Binding OpeningFloat}"
+                                Placeholder="0.00"
+                                Keyboard="Numeric" />
+                        </Border>
+                        <Button Text="Open Shift" Command="{Binding OpenShiftCommand}" />
+                    </VerticalStackLayout>
+                </Border>
 
-        <VerticalStackLayout Spacing="12">
-            <Label Text="Opening float" />
-            <Entry
-                Text="{Binding OpeningFloat}"
-                Placeholder="0.00"
-                Keyboard="Numeric" />
-            <Button Text="Open Shift" Command="{Binding OpenShiftCommand}" />
-        </VerticalStackLayout>
-
-        <Label
-            Text="{Binding ErrorMessage}"
-            TextColor="Red"
-            IsVisible="{Binding HasError}" />
-
-    </VerticalStackLayout>
+                <Label
+                    Text="{Binding ErrorMessage}"
+                    Style="{StaticResource ErrorLabel}"
+                    IsVisible="{Binding HasError}" />
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
 </ContentPage>
