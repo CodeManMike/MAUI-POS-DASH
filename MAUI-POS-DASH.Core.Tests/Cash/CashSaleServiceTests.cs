@@ -48,7 +48,7 @@ public class CashSaleServiceTests
         _dbContext.Tills.Add(new Till { Id = Guid.NewGuid(), ShiftId = _shiftId, CashTotal = 0, FleetCardTotal = 0, MobileMoneyTotal = 0 });
         _dbContext.SaveChanges();
 
-        _sut = new CashSaleService(new EfSaleRepository(_dbContext), new EfTillRepository(_dbContext));
+        _sut = new CashSaleService(new EfSaleRepository(_dbContext), new EfTillRepository(_dbContext), new EfShiftRepository(_dbContext));
     }
     #endregion
 
@@ -147,6 +147,50 @@ public class CashSaleServiceTests
             () => _sut.ProcessSaleAsync(otherShiftId, amountOwed: 50.00m, amountTendered: 50.00m));
         // The Till check must happen before anything is written — otherwise a missing Till leaves
         // an orphaned Sale/Transaction that no Till total will ever reflect.
+        Assert.That(_dbContext.Sales, Is.Empty);
+        Assert.That(_dbContext.Transactions, Is.Empty);
+        #endregion
+    }
+
+    [Test]
+    public async Task ProcessSaleAsync_ShiftIsClosed_ThrowsAndPersistsNothing()
+    {
+        #region Arrange
+        Guid otherAttendantId = Guid.NewGuid();
+        Guid otherShiftId = Guid.NewGuid();
+        _dbContext.Attendants.Add(new Attendant
+        {
+            Id = otherAttendantId,
+            Name = "Carl Carlson",
+            PinHash = "hashed-1111",
+            Role = AttendantRole.Attendant
+        });
+        _dbContext.Shifts.Add(new Shift
+        {
+            Id = otherShiftId,
+            AttendantId = otherAttendantId,
+            OpenedAt = DateTimeOffset.UtcNow,
+            OpeningFloat = 0,
+            Status = ShiftStatus.Closed
+        });
+        _dbContext.Tills.Add(new Till { Id = Guid.NewGuid(), ShiftId = otherShiftId, CashTotal = 0, FleetCardTotal = 0, MobileMoneyTotal = 0 });
+        _dbContext.SaveChanges();
+        #endregion
+
+        #region Act & Assert
+        Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.ProcessSaleAsync(otherShiftId, amountOwed: 50.00m, amountTendered: 50.00m));
+        Assert.That(_dbContext.Sales, Is.Empty);
+        Assert.That(_dbContext.Transactions, Is.Empty);
+        #endregion
+    }
+
+    [Test]
+    public void ProcessSaleAsync_AmountOwedHasMoreThanTwoDecimalPlaces_ThrowsArgumentException()
+    {
+        #region Act & Assert
+        Assert.ThrowsAsync<ArgumentException>(
+            () => _sut.ProcessSaleAsync(_shiftId, amountOwed: 10.005m, amountTendered: 20.00m));
         Assert.That(_dbContext.Sales, Is.Empty);
         Assert.That(_dbContext.Transactions, Is.Empty);
         #endregion

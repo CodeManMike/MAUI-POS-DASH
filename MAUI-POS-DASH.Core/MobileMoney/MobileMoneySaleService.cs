@@ -13,17 +13,20 @@ public class MobileMoneySaleService
     private readonly IMobileMoneyPaymentService _paymentService;
     private readonly ISaleRepository _saleRepository;
     private readonly ITillRepository _tillRepository;
+    private readonly IShiftRepository _shiftRepository;
     #endregion
 
     #region Constructor
     public MobileMoneySaleService(
         IMobileMoneyPaymentService paymentService,
         ISaleRepository saleRepository,
-        ITillRepository tillRepository)
+        ITillRepository tillRepository,
+        IShiftRepository shiftRepository)
     {
         _paymentService = paymentService;
         _saleRepository = saleRepository;
         _tillRepository = tillRepository;
+        _shiftRepository = shiftRepository;
     }
     #endregion
 
@@ -34,6 +37,7 @@ public class MobileMoneySaleService
         {
             throw new ArgumentException("A mobile money sale must have a positive amount.", nameof(amount));
         }
+        SalePreconditions.ValidateCurrencyAmount(amount, nameof(amount), "A mobile money sale amount");
 
         MobileMoneyPaymentResult payment = await _paymentService.RequestPaymentAsync(amount, cancellationToken);
         if (payment.Status == MobileMoneyPaymentStatus.Declined)
@@ -50,11 +54,7 @@ public class MobileMoneySaleService
                 DetailMessage: payment.DetailMessage ?? "The customer didn't confirm in time.");
         }
 
-        // We look up the Till before writing anything — checking after AddSaleWithTransactionAsync
-        // already committed would leave an orphaned Sale/Transaction with no Till update if a shift
-        // somehow lacks one, since that call has no ambient transaction spanning both writes.
-        var till = await _tillRepository.GetByShiftIdAsync(shiftId, cancellationToken)
-            ?? throw new InvalidOperationException($"Shift {shiftId} has no till — every open shift should have one.");
+        var till = await SalePreconditions.GetOpenShiftTillAsync(_shiftRepository, _tillRepository, shiftId, cancellationToken);
 
         var sale = new Sale
         {

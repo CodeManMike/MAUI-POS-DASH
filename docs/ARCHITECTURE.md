@@ -99,19 +99,25 @@ starts the work.
 - A QA pass over the Sale sync fix and all three payment services found and fixed the concrete
   bugs it caught, but flagged a few design gaps left as known, deliberate follow-up rather than
   rushed under deadline pressure:
-  - `Sale.ShiftId` has no FK to `Shift`, and none of `FleetCardSaleService`/`CashSaleService`/
-    `MobileMoneySaleService` check the shift is still `Open` before recording a sale against its
-    Till — a closed/reconciled shift can still silently receive a sale today.
-  - No payment service validates a currency amount has at most 2 decimal places before persisting
-    it to the terminal's SQLite `TerminalDbContext` (unlike `TransactionIngestionService`'s
-    `CanRoundTripThroughCurrencyColumn` check on the backoffice side) — a sub-cent amount can
-    round-trip through SQLite unchanged, then get rounded differently once Postgres's `numeric(18,2)`
-    column receives it on sync, producing a backoffice total that quietly differs from what the
-    terminal itself showed the attendant.
+  - `Sale.ShiftId` has no FK to `Shift`. That's now half-fixed: `FleetCardSaleService`,
+    `CashSaleService`, and `MobileMoneySaleService` all check the shift is still `Open` before
+    recording a sale against its Till, via the shared
+    `MAUI_POS_DASH.Core.Sales.SalePreconditions.GetOpenShiftTillAsync` helper, throwing
+    `InvalidOperationException` if it's closed. The database-level FK constraint itself is still
+    missing — that's a schema/migration change and remains separate, not-yet-done hardening.
+  - Fixed: currency amounts are now validated to have at most 2 decimal places before a payment
+    service ever builds a `Sale` — `SalePreconditions.ValidateCurrencyAmount` rejects anything that
+    wouldn't round-trip through the backoffice's `numeric(18,2)` column, closing the gap where a
+    sub-cent amount could round-trip through the terminal's SQLite `TerminalDbContext` unchanged and
+    then get rounded differently once Postgres received it on sync.
   - The three payment services (`FleetCardSaleService`, `CashSaleService`, `MobileMoneySaleService`)
-    duplicate the same validate → build Sale/Transaction → persist → update-Till sequence almost
-    verbatim; a shared helper would mean fixing this class of bug once instead of three times (as
-    the Till-check-ordering fix above had to be).
+    still duplicate the same build Sale/Transaction → persist → update-Till sequence almost verbatim.
+    This is now partially addressed: the shift/till lookup and currency validation are shared via
+    `SalePreconditions`, so that class of bug gets fixed once instead of three times going forward.
+    But building the Sale/Transaction and updating the till's own total field is still separate per
+    service — each increments a different `Till` field (`FleetCardTotal`/`CashTotal`/
+    `MobileMoneyTotal`) and has different upstream branching before it — so the construction/persist
+    half of the duplication remains.
   - `AttendantService.EnsureNotLastActiveManagerAsync` checks the target attendant's `Role` but not
     whether they're already `IsActive` — an edge case with low real-world impact.
 - A Codex review of the MAUI MVVM app's `AttendantManagementViewModel` flagged that `AttendantService`
