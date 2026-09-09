@@ -51,8 +51,10 @@ the exact same service classes the Blazor app calls. Code-behind (`*.xaml.cs`) i
 constructor injection setting `BindingContext` and one `OnAppearing` passthrough to the
 ViewModel; nothing else is allowed there. See `ViewModels/AuthenticatedViewModelBase.cs` and
 `ViewModels/ShiftAwareViewModelBase.cs` for the shared session/shift-guard logic every screen
-would otherwise have repeated. This app intentionally excludes the offline sync queue — it isn't
-what's being demonstrated, and skipping it removes a dependency on a running backend.
+would otherwise have repeated. This app now syncs too, sharing the same `HttpTransactionSyncService`
+the Blazor app uses (it now lives in `MAUI-POS-DASH.Core/Sync` so both apps reuse one
+implementation instead of duplicating it) — a sync attempt fires after each completed sale and on
+every Home appearing.
 
 There's deliberately no `Models` folder alongside `Views`/`ViewModels` here — the Model half of
 this app's MVVM is `MAUI-POS-DASH.Core`'s domain model (`Attendant`, `Shift`, `Sale`,

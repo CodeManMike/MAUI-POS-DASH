@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using MAUI_POS_DASH.Core.Attendants;
+using MAUI_POS_DASH.Core.Sync;
 
 namespace MAUI_POS_DASH.MAUI_Android.ViewModels;
 
@@ -11,10 +12,25 @@ namespace MAUI_POS_DASH.MAUI_Android.ViewModels;
 /// </summary>
 public partial class HomeViewModel : AuthenticatedViewModelBase
 {
+    #region Fields
+    private readonly OfflineTransactionQueue _offlineTransactionQueue;
+    #endregion
+
     #region Constructor
-    public HomeViewModel(AttendantService attendantService) : base(attendantService)
+    public HomeViewModel(AttendantService attendantService, OfflineTransactionQueue offlineTransactionQueue) : base(attendantService)
     {
+        _offlineTransactionQueue = offlineTransactionQueue;
     }
+    #endregion
+
+    #region Protected Methods
+    /// <summary>
+    /// We opportunistically flush any pending transactions every time the attendant lands back on
+    /// Home — this is the one screen every attendant passes through constantly, so it's a natural
+    /// place to retry a sync that failed while the terminal was offline, without needing a
+    /// dedicated background timer.
+    /// </summary>
+    protected override Task OnAuthenticatedAppearingAsync() => _offlineTransactionQueue.TryFlushAsync();
     #endregion
 
     #region Commands

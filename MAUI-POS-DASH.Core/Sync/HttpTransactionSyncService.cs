@@ -1,8 +1,7 @@
 using System.Net.Http.Json;
 using MAUI_POS_DASH.Core.Contracts;
-using MAUI_POS_DASH.Core.Sync;
 
-namespace MAUI_POS_DASH.Services;
+namespace MAUI_POS_DASH.Core.Sync;
 
 /// <summary>
 /// We post pending transactions to the back office's sync endpoint over HTTP. This is the one
