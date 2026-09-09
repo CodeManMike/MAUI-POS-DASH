@@ -9,13 +9,7 @@ Conventions for anyone — human or AI — working in this repository. This is t
 - **Architect** — Claude, working in this repo.
 - **Builder** — Codex, working in this repo.
 
-Use these names in docs, comments, and the module ownership table in `docs/ARCHITECTURE.md`.
-
-## Before touching a module
-
-Check the ownership table in `docs/ARCHITECTURE.md` and the module's own `Core/Modules/*/README.md`.
-Claim a row before writing code in that folder — edit both files in the same commit that starts
-the work, so two contributors don't pick the same module at the same time.
+Use these names in docs and comments.
 
 ## Code conventions
 
