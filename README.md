@@ -27,9 +27,7 @@ identical terminal twice:
 | Shares code with | The Web dashboard (`MAUI-POS-DASH.Shared`) | Nothing outside this app — no web/XAML crossover |
 | Per-screen ceremony | A page's `@code` block *is* the presentation logic | A dedicated `ViewModel` class per screen, with `[ObservableProperty]`/`[RelayCommand]` |
 
-Neither one is a stripped-down demo of the other, and neither is "the real app" with the other
-bolted on as an afterthought — that was a deliberate call, not a hedge. Both implement the same
-eight screens, call the exact same `Core` services, and (as of the most recent pass) both sync to
+Both implement the same eight screens, call the exact same `Core` services, and (as of the most recent pass) both sync to
 the same back office. If you're only going to read one comparison of Blazor Hybrid vs. plain
 MAUI XAML+MVVM this year, I'd like it to at least be grounded in two real, working apps instead of
 two paragraphs of vibes.
@@ -169,9 +167,7 @@ ones worth explaining.
   case. Plain `if` stays for simple guard clauses, where forcing a switch would just be showing off.
 - **Never nest where you don't have to.** If an `if`/`else` splits a method into two branches that
   both eventually fall through to the same trailing code, that's a sign to give each branch its own
-  early return instead. Two of these turned up during a deliberate pass over the codebase — an
-  ingestion check and an attendant self-demotion flow — and both read better flattened; see the
-  git history for the exact diffs if you want to compare before/after.
+  early return instead.
 - **Resolve a shared `DbContext` once per scope, not once per call.** Constructor injection into a
   field is the default — every repository in `Core.Persistence` does this — and it's what makes the
   previous rule about nesting actually safe to apply: one context, one change tracker, no surprises
@@ -184,11 +180,6 @@ ones worth explaining.
   where something is genuinely non-obvious.** A comment that explains *why* survives a refactor. A
   comment that restates *what* the next line already says just rots the first time someone changes
   that line and doesn't think to update the comment three lines up.
-- **Comments and docs are written in first person** ("we"/"I"), because a codebase that reads like
-  a person actually built it is more pleasant to work in than one written like a legal disclaimer.
-- **Never commit a real secret.** The throwaway Postgres credentials in
-  `appsettings.Development.json` are exactly that — throwaway. Anything real goes through
-  user-secrets or an environment variable, never the committed file.
 
 ## User journeys
 
