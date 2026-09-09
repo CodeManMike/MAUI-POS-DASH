@@ -1,3 +1,4 @@
+using MAUI_POS_DASH.Web;
 using MAUI_POS_DASH.Web.Api;
 using MAUI_POS_DASH.Web.Components;
 
@@ -8,16 +9,7 @@ public partial class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.
-        builder.Services.AddRazorComponents()
-            .AddInteractiveServerComponents()
-            .AddInteractiveWebAssemblyComponents();
-
-        builder.Services.AddDbContext<BackofficeDbContext>(options =>
-            options.UseNpgsql(builder.Configuration.GetConnectionString("Backoffice")
-                ?? "Host=localhost;Database=mauiposdash_dev;Username=postgres;Password=postgres"));
-        builder.Services.AddSingleton(TimeProvider.System);
-        builder.Services.AddScoped<ITransactionIngestionService, TransactionIngestionService>();
+        builder.Services.AddBackofficeServices(builder.Configuration);
 
         var app = builder.Build();
 
