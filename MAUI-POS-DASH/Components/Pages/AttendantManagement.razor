@@ -76,6 +76,7 @@ else
 @code {
     private bool _loading = true;
     private bool _isManager;
+    private Guid _currentAttendantId;
     private IReadOnlyList<Attendant> _attendants = [];
     private Guid? _editingId;
     private string _formName = string.Empty;
@@ -86,6 +87,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         var session = await AttendantService.GetActiveSessionAsync();
+        _currentAttendantId = session?.AttendantId ?? Guid.Empty;
         _isManager = session?.Attendant?.Role == AttendantRole.Manager;
 
         if (_isManager)
@@ -124,6 +126,8 @@ else
             }
             else
             {
+                bool isSelfDemotion = _editingId == _currentAttendantId && _formRole != AttendantRole.Manager;
+
                 // We reset the PIN first, not last — ValidatePin runs before any write happens
                 // inside ResetPinAsync, so an invalid PIN throws here with nothing persisted yet.
                 // Doing UpdateAttendantAsync first would commit the name/role change even when
@@ -134,6 +138,16 @@ else
                 }
 
                 await AttendantService.UpdateAttendantAsync(_editingId.Value, _formName, _formRole);
+
+                if (isSelfDemotion)
+                {
+                    // The role change is already committed at this point — we revoke Manager-only
+                    // access immediately rather than waiting for a future OnInitializedAsync, since
+                    // this component instance stays alive (and _isManager stays true) for the rest
+                    // of this visit otherwise.
+                    _isManager = false;
+                    return;
+                }
             }
 
             _attendants = await AttendantService.GetActiveAttendantsAsync();
