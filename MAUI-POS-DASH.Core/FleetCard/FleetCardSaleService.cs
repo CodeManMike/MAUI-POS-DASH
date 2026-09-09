@@ -15,6 +15,7 @@ public class FleetCardSaleService
     private readonly IFleetCardAuthorizationService _authorizationService;
     private readonly ISaleRepository _saleRepository;
     private readonly ITillRepository _tillRepository;
+    private readonly IShiftRepository _shiftRepository;
     #endregion
 
     #region Constructor
@@ -22,12 +23,14 @@ public class FleetCardSaleService
         ICardReaderService cardReader,
         IFleetCardAuthorizationService authorizationService,
         ISaleRepository saleRepository,
-        ITillRepository tillRepository)
+        ITillRepository tillRepository,
+        IShiftRepository shiftRepository)
     {
         _cardReader = cardReader;
         _authorizationService = authorizationService;
         _saleRepository = saleRepository;
         _tillRepository = tillRepository;
+        _shiftRepository = shiftRepository;
     }
     #endregion
 
@@ -42,6 +45,7 @@ public class FleetCardSaleService
         {
             throw new ArgumentException("A fleet card sale must have a positive amount.", nameof(amount));
         }
+        SalePreconditions.ValidateCurrencyAmount(amount, nameof(amount), "A fleet card sale amount");
 
         CardReadResult cardRead = await _cardReader.WaitForCardAsync(cancellationToken);
         if (cardRead.Status != CardReadStatus.Success)
@@ -63,11 +67,7 @@ public class FleetCardSaleService
                 DetailMessage: authorization.DeclineReason ?? "Card declined by the fleet operator.");
         }
 
-        // We look up the Till before writing anything — checking after AddSaleWithTransactionAsync
-        // already committed would leave an orphaned Sale/Transaction with no Till update if a shift
-        // somehow lacks one, since that call has no ambient transaction spanning both writes.
-        var till = await _tillRepository.GetByShiftIdAsync(shiftId, cancellationToken)
-            ?? throw new InvalidOperationException($"Shift {shiftId} has no till — every open shift should have one.");
+        var till = await SalePreconditions.GetOpenShiftTillAsync(_shiftRepository, _tillRepository, shiftId, cancellationToken);
 
         var sale = new Sale
         {

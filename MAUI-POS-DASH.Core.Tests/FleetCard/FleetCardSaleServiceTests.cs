@@ -54,7 +54,7 @@ public class FleetCardSaleServiceTests
         _cardReader = new FakeCardReaderService();
         _authorizationService = new FakeFleetCardAuthorizationService();
 
-        _sut = new FleetCardSaleService(_cardReader, _authorizationService, new EfSaleRepository(_dbContext), new EfTillRepository(_dbContext));
+        _sut = new FleetCardSaleService(_cardReader, _authorizationService, new EfSaleRepository(_dbContext), new EfTillRepository(_dbContext), new EfShiftRepository(_dbContext));
     }
     #endregion
 
@@ -182,6 +182,47 @@ public class FleetCardSaleServiceTests
         // an orphaned Sale/Transaction that no Till total will ever reflect.
         Assert.That(_dbContext.Sales, Is.Empty);
         Assert.That(_dbContext.Transactions, Is.Empty);
+        #endregion
+    }
+
+    [Test]
+    public async Task ProcessSaleAsync_ShiftIsClosed_ThrowsAndPersistsNothing()
+    {
+        #region Arrange
+        Guid otherAttendantId = Guid.NewGuid();
+        Guid otherShiftId = Guid.NewGuid();
+        _dbContext.Attendants.Add(new Attendant
+        {
+            Id = otherAttendantId,
+            Name = "Moe Szyslak",
+            PinHash = "hashed-2222",
+            Role = AttendantRole.Attendant
+        });
+        _dbContext.Shifts.Add(new Shift
+        {
+            Id = otherShiftId,
+            AttendantId = otherAttendantId,
+            OpenedAt = DateTimeOffset.UtcNow,
+            OpeningFloat = 0,
+            Status = ShiftStatus.Closed
+        });
+        _dbContext.Tills.Add(new Till { Id = Guid.NewGuid(), ShiftId = otherShiftId, CashTotal = 0, FleetCardTotal = 0, MobileMoneyTotal = 0 });
+        _dbContext.SaveChanges();
+        #endregion
+
+        #region Act & Assert
+        Assert.ThrowsAsync<InvalidOperationException>(() => _sut.ProcessSaleAsync(otherShiftId, 50.00m));
+        Assert.That(_dbContext.Sales, Is.Empty);
+        Assert.That(_dbContext.Transactions, Is.Empty);
+        #endregion
+    }
+
+    [Test]
+    public void ProcessSaleAsync_AmountHasMoreThanTwoDecimalPlaces_ThrowsAndNeverWaitsForCard()
+    {
+        #region Act & Assert
+        Assert.ThrowsAsync<ArgumentException>(() => _sut.ProcessSaleAsync(_shiftId, 10.005m));
+        Assert.That(_cardReader.WaitForCardCallCount, Is.Zero);
         #endregion
     }
     #endregion

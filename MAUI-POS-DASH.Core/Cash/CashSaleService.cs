@@ -12,13 +12,15 @@ public class CashSaleService
     #region Fields
     private readonly ISaleRepository _saleRepository;
     private readonly ITillRepository _tillRepository;
+    private readonly IShiftRepository _shiftRepository;
     #endregion
 
     #region Constructor
-    public CashSaleService(ISaleRepository saleRepository, ITillRepository tillRepository)
+    public CashSaleService(ISaleRepository saleRepository, ITillRepository tillRepository, IShiftRepository shiftRepository)
     {
         _saleRepository = saleRepository;
         _tillRepository = tillRepository;
+        _shiftRepository = shiftRepository;
     }
     #endregion
 
@@ -39,11 +41,9 @@ public class CashSaleService
             throw new ArgumentException("Cash tendered must cover the amount owed.", nameof(amountTendered));
         }
 
-        // We look up the Till before writing anything — checking after AddSaleWithTransactionAsync
-        // already committed would leave an orphaned Sale/Transaction with no Till update if a shift
-        // somehow lacks one, since that call has no ambient transaction spanning both writes.
-        var till = await _tillRepository.GetByShiftIdAsync(shiftId, cancellationToken)
-            ?? throw new InvalidOperationException($"Shift {shiftId} has no till — every open shift should have one.");
+        SalePreconditions.ValidateCurrencyAmount(amountOwed, nameof(amountOwed), "A cash sale amount owed");
+
+        var till = await SalePreconditions.GetOpenShiftTillAsync(_shiftRepository, _tillRepository, shiftId, cancellationToken);
 
         var sale = new Sale
         {

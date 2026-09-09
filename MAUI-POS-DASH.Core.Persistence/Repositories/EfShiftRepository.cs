@@ -27,6 +27,11 @@ public class EfShiftRepository : IShiftRepository
             .SingleOrDefaultAsync(cancellationToken);
     }
 
+    public Task<Shift?> GetByIdAsync(Guid shiftId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Shifts.SingleOrDefaultAsync(shift => shift.Id == shiftId, cancellationToken);
+    }
+
     public async Task<Shift> OpenAsync(Shift shift, CancellationToken cancellationToken = default)
     {
         _dbContext.Shifts.Add(shift);
