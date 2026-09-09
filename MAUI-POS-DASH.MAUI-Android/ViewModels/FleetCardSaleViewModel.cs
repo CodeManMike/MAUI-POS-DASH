@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using MAUI_POS_DASH.Core.Attendants;
 using MAUI_POS_DASH.Core.FleetCard;
 using MAUI_POS_DASH.Core.Shifts;
+using MAUI_POS_DASH.Core.Sync;
 
 namespace MAUI_POS_DASH.MAUI_Android.ViewModels;
 
@@ -15,6 +16,7 @@ public partial class FleetCardSaleViewModel : ShiftAwareViewModelBase
 {
     #region Fields
     private readonly FleetCardSaleService _fleetCardSaleService;
+    private readonly OfflineTransactionQueue _offlineTransactionQueue;
 
     [ObservableProperty]
     private decimal _amount;
@@ -42,10 +44,12 @@ public partial class FleetCardSaleViewModel : ShiftAwareViewModelBase
     public FleetCardSaleViewModel(
         AttendantService attendantService,
         ShiftService shiftService,
-        FleetCardSaleService fleetCardSaleService)
+        FleetCardSaleService fleetCardSaleService,
+        OfflineTransactionQueue offlineTransactionQueue)
         : base(attendantService, shiftService)
     {
         _fleetCardSaleService = fleetCardSaleService;
+        _offlineTransactionQueue = offlineTransactionQueue;
     }
     #endregion
 
@@ -76,6 +80,7 @@ public partial class FleetCardSaleViewModel : ShiftAwareViewModelBase
         try
         {
             Result = await _fleetCardSaleService.ProcessSaleAsync(CurrentShift!.Id, Amount);
+            await _offlineTransactionQueue.TryFlushAsync();
         }
         catch (ArgumentException ex)
         {

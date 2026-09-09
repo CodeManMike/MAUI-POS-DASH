@@ -10,7 +10,6 @@ using MAUI_POS_DASH.Core.Sales;
 using MAUI_POS_DASH.Core.Shifts;
 using MAUI_POS_DASH.Core.Sync;
 using MAUI_POS_DASH.Platforms.Android.Devices;
-using MAUI_POS_DASH.Services;
 
 namespace MAUI_POS_DASH;
 
@@ -59,6 +58,19 @@ public static class ServiceRegistration
             // We point at the back office's local dev URL for now — production config will come
             // from appsettings once the Sync module is actually built out.
             client.BaseAddress = new Uri("https://localhost:7135/");
+        })
+        .ConfigurePrimaryHttpMessageHandler(() =>
+        {
+            var handler = new HttpClientHandler();
+#if DEBUG
+            // Local dev only: the ASP.NET Core dev HTTPS certificate is self-signed and Android doesn't
+            // trust it by default (this app has no network_security_config.xml opting in a user CA), so
+            // without this every sync attempt TLS-fails silently and looks identical to "offline" even
+            // with the backend fully reachable via `adb reverse`. Release keeps normal certificate
+            // validation — this handler only exists to unblock local device testing.
+            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+#endif
+            return handler;
         });
     }
     #endregion

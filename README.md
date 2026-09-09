@@ -20,7 +20,7 @@ team (human and AI) works in this repo.
 - **MAUI-POS-DASH.MAUI-Android** — the same terminal's core flows (login, shifts, all three
   payment methods, attendant management), reimplemented as plain MAUI XAML + MVVM
   (`CommunityToolkit.Mvvm`), Android only. References `Core`/`Core.Persistence` directly — no
-  duplicated business logic. Deliberately excludes the offline sync queue.
+  duplicated business logic.
 - **MAUI-POS-DASH.Web** / **MAUI-POS-DASH.Web.Client** — the back-office dashboard (Blazor Web
   App, server + WASM).
 - **MAUI-POS-DASH.Shared** — Razor UI components used by both hosts.

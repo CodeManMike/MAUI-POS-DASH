@@ -102,6 +102,14 @@ design promise; the `EfTransactionQueueStore` test above covers the testable hal
 mechanism — the Sale-to-DTO mapping and de-duplication in `HttpTransactionSyncService` itself
 remains manually-verified only.
 
+**Second correction, added later:** `HttpTransactionSyncService` was subsequently moved to
+`MAUI-POS-DASH.Core/Sync` so both terminal apps (`MAUI-POS-DASH` and the newer
+`MAUI-POS-DASH.MAUI-Android`) could share one implementation instead of duplicating it. That move
+also made it directly unit-testable in `MAUI-POS-DASH.Core.Tests` — the previously-deferred test
+now exists at `MAUI-POS-DASH.Core.Tests/Sync/HttpTransactionSyncServiceTests.cs`, covering the
+Sale-to-DTO mapping and de-duplication behavior the paragraph above says was manually-verified
+only.
+
 ## Out of scope (explicitly deferred)
 
 - Shift and Attendant sync.

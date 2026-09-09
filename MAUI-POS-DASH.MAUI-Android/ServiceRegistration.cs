@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MAUI_POS_DASH.Core.Attendants;
 using MAUI_POS_DASH.Core.Cash;
+using MAUI_POS_DASH.Core.Contracts;
 using MAUI_POS_DASH.Core.Devices;
 using MAUI_POS_DASH.Core.FleetCard;
 using MAUI_POS_DASH.Core.MobileMoney;
@@ -8,6 +9,7 @@ using MAUI_POS_DASH.Core.Persistence;
 using MAUI_POS_DASH.Core.Persistence.Repositories;
 using MAUI_POS_DASH.Core.Sales;
 using MAUI_POS_DASH.Core.Shifts;
+using MAUI_POS_DASH.Core.Sync;
 using MAUI_POS_DASH.MAUI_Android.Platforms.Android.Devices;
 using MAUI_POS_DASH.MAUI_Android.ViewModels;
 using MAUI_POS_DASH.MAUI_Android.Views;
@@ -32,8 +34,9 @@ public static class ServiceRegistration
     #region Private Methods
     /// <summary>
     /// This mirrors MAUI-POS-DASH/ServiceRegistration.cs's RegisterCoreServices — same Core
-    /// services, same conventions — minus the sync/background-queue registrations, which this app
-    /// deliberately doesn't include (see the MVVM POC's README for why).
+    /// services, same conventions, including the offline-sync queue and the HttpClient for
+    /// ITransactionSyncService (backed by the shared HttpTransactionSyncService in
+    /// MAUI-POS-DASH.Core/Sync, the same implementation the Blazor Hybrid app uses).
     /// </summary>
     private static void RegisterCoreServices(IServiceCollection services)
     {
@@ -61,6 +64,30 @@ public static class ServiceRegistration
         services.AddScoped<MobileMoneySaleService>();
 
         services.AddSingleton<ICardReaderService, SimulatedPaxCardReader>();
+
+        services.AddScoped<ITransactionQueueStore, EfTransactionQueueStore>();
+        services.AddScoped<OfflineTransactionQueue>();
+        services.AddSingleton<EntityMapper>();
+
+        services.AddHttpClient<ITransactionSyncService, HttpTransactionSyncService>(client =>
+        {
+            // We point at the back office's local dev URL for now — production config will come
+            // from appsettings once the Sync module is actually built out.
+            client.BaseAddress = new Uri("https://localhost:7135/");
+        })
+        .ConfigurePrimaryHttpMessageHandler(() =>
+        {
+            var handler = new HttpClientHandler();
+        #if DEBUG
+            // Local dev only: the ASP.NET Core dev HTTPS certificate is self-signed and Android doesn't
+            // trust it by default (this app has no network_security_config.xml opting in a user CA), so
+            // without this every sync attempt TLS-fails silently and looks identical to "offline" even
+            // with the backend fully reachable via `adb reverse`. Release keeps normal certificate
+            // validation — this handler only exists to unblock local device testing.
+            handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+        #endif
+            return handler;
+        });
     }
 
     /// <summary>
