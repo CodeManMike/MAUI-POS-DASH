@@ -8,44 +8,49 @@
     x:DataType="vm:CashSaleViewModel"
     Title="Cash Sale">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="24" Spacing="16">
-            <views:StatusHeaderView />
+    <Grid RowDefinitions="Auto,*">
+        <views:StatusHeaderView Grid.Row="0" />
 
-            <Button Text="Back to terminal home" Command="{Binding GoToHomeCommand}" />
-
-            <Label Text="Cash Sale" FontSize="24" FontAttributes="Bold" />
-
-            <VerticalStackLayout IsVisible="{Binding NoOpenShift}" Spacing="12">
-                <Label Text="{Binding NoShiftMessage}" />
-            </VerticalStackLayout>
-
-            <VerticalStackLayout IsVisible="{Binding IsInputForm}" Spacing="12">
-                <Label Text="Amount owed" />
-                <Entry Text="{Binding AmountOwed}" Placeholder="0.00" Keyboard="Numeric" />
-
-                <Label Text="Cash tendered" />
-                <Entry Text="{Binding AmountTendered}" Placeholder="0.00" Keyboard="Numeric" />
-
-                <Button Text="Take Payment" Command="{Binding ProcessSaleCommand}" />
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,24" Spacing="18">
+                <Label Text="Cash Sale" Style="{StaticResource PageTitle}" />
 
                 <Label
-                    Text="{Binding ErrorMessage}"
-                    TextColor="Red"
-                    IsVisible="{Binding HasError}" />
+                    Text="{Binding NoShiftMessage}"
+                    Style="{StaticResource Subtext}"
+                    IsVisible="{Binding NoOpenShift}" />
+
+                <Border Style="{StaticResource Card}" IsVisible="{Binding IsInputForm}">
+                    <VerticalStackLayout Spacing="14">
+                        <Label Text="Amount owed" Style="{StaticResource FieldLabel}" />
+                        <Border Style="{StaticResource FieldFrame}">
+                            <Entry Text="{Binding AmountOwed}" Placeholder="0.00" Keyboard="Numeric" />
+                        </Border>
+
+                        <Label Text="Cash tendered" Style="{StaticResource FieldLabel}" />
+                        <Border Style="{StaticResource FieldFrame}">
+                            <Entry Text="{Binding AmountTendered}" Placeholder="0.00" Keyboard="Numeric" />
+                        </Border>
+
+                        <Button Text="Take Payment" Command="{Binding ProcessSaleCommand}" />
+
+                        <Label
+                            Text="{Binding ErrorMessage}"
+                            Style="{StaticResource ErrorLabel}"
+                            IsVisible="{Binding HasError}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource Card}" IsVisible="{Binding HasResult}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="{Binding Result.Change, StringFormat='Change due: R{0}'}" Style="{StaticResource AmountDisplay}" />
+                        <Label Text="{Binding Result.Sale.Id, StringFormat='Sale {0}'}" Style="{StaticResource Subtext}" />
+                        <Label Text="{Binding Result.Transaction.Amount, StringFormat='R{0}'}" Style="{StaticResource Subtext}" />
+                        <Button Text="Take Another Payment" Command="{Binding ResetCommand}" />
+                    </VerticalStackLayout>
+                </Border>
+
             </VerticalStackLayout>
-
-            <VerticalStackLayout IsVisible="{Binding HasResult}" Spacing="12">
-                <Label
-                    Text="{Binding Result.Change, StringFormat='Change due: R{0}'}"
-                    FontSize="20"
-                    FontAttributes="Bold" />
-                <Label Text="{Binding Result.Sale.Id, StringFormat='Sale {0}'}" />
-                <Label Text="{Binding Result.Transaction.Amount, StringFormat='R{0}'}" />
-
-                <Button Text="Take Another Payment" Command="{Binding ResetCommand}" />
-            </VerticalStackLayout>
-
-        </VerticalStackLayout>
-    </ScrollView>
+        </ScrollView>
+    </Grid>
 </ContentPage>

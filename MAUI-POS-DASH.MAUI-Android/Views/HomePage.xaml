@@ -8,18 +8,22 @@
     x:DataType="vm:HomeViewModel"
     Title="Forecourt Terminal">
 
-    <VerticalStackLayout Padding="24" Spacing="16">
-        <views:StatusHeaderView />
+    <Grid RowDefinitions="Auto,*">
+        <views:StatusHeaderView Grid.Row="0" />
 
-        <Label Text="Forecourt Terminal" FontSize="24" FontAttributes="Bold" />
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,24" Spacing="18">
+                <Label Text="Forecourt Terminal" Style="{StaticResource PageTitle}" />
 
-        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
-            <Button Grid.Row="0" Grid.Column="0" Text="Fleet Card" Command="{Binding GoToFleetCardCommand}" />
-            <Button Grid.Row="0" Grid.Column="1" Text="Mobile Money" Command="{Binding GoToMobileMoneyCommand}" />
-            <Button Grid.Row="1" Grid.Column="0" Text="Cash" Command="{Binding GoToCashCommand}" />
-            <Button Grid.Row="1" Grid.Column="1" Text="Attendants" Command="{Binding GoToAttendantsCommand}" />
-            <Button Grid.Row="2" Grid.Column="0" Text="Open Shift" Command="{Binding GoToOpenShiftCommand}" />
-            <Button Grid.Row="2" Grid.Column="1" Text="Close Shift" Command="{Binding GoToCloseShiftCommand}" />
-        </Grid>
-    </VerticalStackLayout>
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="14" RowSpacing="14">
+                    <Button Grid.Row="0" Grid.Column="0" Text="Fleet Card" Command="{Binding GoToFleetCardCommand}" Style="{StaticResource NavTile}" />
+                    <Button Grid.Row="0" Grid.Column="1" Text="Mobile Money" Command="{Binding GoToMobileMoneyCommand}" Style="{StaticResource NavTile}" />
+                    <Button Grid.Row="1" Grid.Column="0" Text="Cash" Command="{Binding GoToCashCommand}" Style="{StaticResource NavTile}" />
+                    <Button Grid.Row="1" Grid.Column="1" Text="Attendants" Command="{Binding GoToAttendantsCommand}" Style="{StaticResource NavTile}" />
+                    <Button Grid.Row="2" Grid.Column="0" Text="Open Shift" Command="{Binding GoToOpenShiftCommand}" Style="{StaticResource NavTile}" />
+                    <Button Grid.Row="2" Grid.Column="1" Text="Close Shift" Command="{Binding GoToCloseShiftCommand}" Style="{StaticResource NavTile}" />
+                </Grid>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
 </ContentPage>

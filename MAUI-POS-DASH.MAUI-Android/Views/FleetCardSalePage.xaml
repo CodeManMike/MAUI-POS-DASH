@@ -8,41 +8,51 @@
     x:DataType="vm:FleetCardSaleViewModel"
     Title="Fleet Card">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="24" Spacing="16">
-            <views:StatusHeaderView />
+    <Grid RowDefinitions="Auto,*">
+        <views:StatusHeaderView Grid.Row="0" />
 
-            <Button Text="Back to terminal home" Command="{Binding GoToHomeCommand}" />
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,24" Spacing="18">
+                <Label Text="Fleet Card" Style="{StaticResource PageTitle}" />
 
-            <Label Text="Fleet Card" FontSize="24" FontAttributes="Bold" />
-
-            <VerticalStackLayout IsVisible="{Binding NoOpenShift}" Spacing="12">
-                <Label Text="{Binding NoShiftMessage}" />
-            </VerticalStackLayout>
-
-            <VerticalStackLayout IsVisible="{Binding IsInputForm}" Spacing="12">
-                <Entry Text="{Binding Amount}" Placeholder="Amount" Keyboard="Numeric" />
-                <Button
-                    Text="{Binding ProcessButtonText}"
-                    Command="{Binding ProcessSaleCommand}"
-                    IsEnabled="{Binding CanTakePayment}" />
                 <Label
-                    Text="{Binding ErrorMessage}"
-                    TextColor="Red"
-                    IsVisible="{Binding HasError}" />
-            </VerticalStackLayout>
+                    Text="{Binding NoShiftMessage}"
+                    Style="{StaticResource Subtext}"
+                    IsVisible="{Binding NoOpenShift}" />
 
-            <VerticalStackLayout IsVisible="{Binding IsResultView}" Spacing="12">
-                <Label Text="{Binding Result.DetailMessage}" />
-                <Label
-                    Text="{Binding Result.Sale.Id, StringFormat='Sale {0}'}"
-                    IsVisible="{Binding IsApproved}" />
-                <Label
-                    Text="{Binding Result.Transaction.Amount, StringFormat='Amount R{0:0.00}'}"
-                    IsVisible="{Binding IsApproved}" />
-                <Button Text="Take Another Payment" Command="{Binding ResetCommand}" />
-            </VerticalStackLayout>
+                <Border Style="{StaticResource Card}" IsVisible="{Binding IsInputForm}">
+                    <VerticalStackLayout Spacing="14">
+                        <Label Text="Amount" Style="{StaticResource FieldLabel}" />
+                        <Border Style="{StaticResource FieldFrame}">
+                            <Entry Text="{Binding Amount}" Placeholder="0.00" Keyboard="Numeric" />
+                        </Border>
+                        <Button
+                            Text="{Binding ProcessButtonText}"
+                            Command="{Binding ProcessSaleCommand}"
+                            IsEnabled="{Binding CanTakePayment}" />
+                        <Label
+                            Text="{Binding ErrorMessage}"
+                            Style="{StaticResource ErrorLabel}"
+                            IsVisible="{Binding HasError}" />
+                    </VerticalStackLayout>
+                </Border>
 
-        </VerticalStackLayout>
-    </ScrollView>
+                <Border Style="{StaticResource Card}" IsVisible="{Binding IsResultView}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="{Binding Result.DetailMessage}" Style="{StaticResource Subtext}" />
+                        <Label
+                            Text="{Binding Result.Transaction.Amount, StringFormat='R{0:0.00}'}"
+                            Style="{StaticResource AmountDisplay}"
+                            IsVisible="{Binding IsApproved}" />
+                        <Label
+                            Text="{Binding Result.Sale.Id, StringFormat='Sale {0}'}"
+                            Style="{StaticResource Subtext}"
+                            IsVisible="{Binding IsApproved}" />
+                        <Button Text="Take Another Payment" Command="{Binding ResetCommand}" />
+                    </VerticalStackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
 </ContentPage>

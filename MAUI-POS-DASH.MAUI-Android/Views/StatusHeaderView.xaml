@@ -1,21 +1,57 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!--
-    We factor this out so every authenticated page shows the signed-in attendant and a sign-out
-    button the same way, without each page's XAML repeating it. It has no BindingContext of its
-    own — it inherits whatever ViewModel the hosting page is bound to, so it only works correctly
-    inside a page whose ViewModel derives from AuthenticatedViewModelBase.
+    We factor this out so every authenticated page shows the same top app bar — home, the
+    signed-in attendant, sign out — without each page's XAML repeating it. It has no BindingContext
+    of its own — it inherits whatever ViewModel the hosting page is bound to, so it only works
+    correctly inside a page whose ViewModel derives from AuthenticatedViewModelBase, and it's
+    rendered full-bleed at the top of each page's root Grid rather than inside the padded,
+    scrollable content area, so it reads as a real app bar rather than an inset row of text.
 -->
 <ContentView
     x:Class="MAUI_POS_DASH.MAUI_Android.Views.StatusHeaderView"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
-    <Grid ColumnDefinitions="*,Auto" Padding="0,0,0,16">
+    <Grid
+        Padding="20,16,20,14"
+        RowSpacing="6"
+        BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource SurfaceDark}}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.Shadow>
+            <Shadow Brush="{StaticResource ShadowBrush}" Radius="10" Opacity="1" Offset="0,3" />
+        </Grid.Shadow>
+
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
+            <Button
+                Grid.Column="0"
+                Text="Home"
+                Command="{Binding GoToHomeCommand}"
+                Style="{StaticResource SecondaryButton}"
+                TextColor="{AppThemeBinding Light={StaticResource OnPrimary}, Dark={StaticResource OnSurfaceDark}}"
+                BorderColor="{AppThemeBinding Light={StaticResource OnPrimary}, Dark={StaticResource OutlineDark}}"
+                FontSize="12"
+                Padding="14,8"
+                MinimumHeightRequest="36" />
+            <Button
+                Grid.Column="2"
+                Text="Sign out"
+                Command="{Binding SignOutCommand}"
+                Style="{StaticResource SecondaryButton}"
+                TextColor="{AppThemeBinding Light={StaticResource OnPrimary}, Dark={StaticResource OnSurfaceDark}}"
+                BorderColor="{AppThemeBinding Light={StaticResource OnPrimary}, Dark={StaticResource OutlineDark}}"
+                FontSize="12"
+                Padding="14,8"
+                MinimumHeightRequest="36" />
+        </Grid>
+
         <Label
-            Grid.Column="0"
+            Grid.Row="1"
             Text="{Binding CurrentAttendantName, StringFormat='Signed in as {0}'}"
-            FontAttributes="Bold"
-            VerticalOptions="Center" />
-        <Button Grid.Column="1" Text="Sign out" Command="{Binding SignOutCommand}" />
+            FontFamily="OpenSansSemibold"
+            FontSize="14"
+            TextColor="{AppThemeBinding Light={StaticResource OnPrimary}, Dark={StaticResource OnSurfaceDark}}" />
     </Grid>
 </ContentView>

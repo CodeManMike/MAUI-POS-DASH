@@ -8,36 +8,43 @@
     x:DataType="vm:ShiftCloseViewModel"
     Title="Close Shift">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="24" Spacing="16">
-            <views:StatusHeaderView />
+    <Grid RowDefinitions="Auto,*">
+        <views:StatusHeaderView Grid.Row="0" />
 
-            <Button Text="Back to terminal home" Command="{Binding GoToHomeCommand}" />
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,24" Spacing="18">
+                <Label Text="Close Shift" Style="{StaticResource PageTitle}" />
 
-            <Label Text="Close Shift" FontSize="24" FontAttributes="Bold" />
+                <Label
+                    Text="{Binding NoShiftMessage}"
+                    Style="{StaticResource Subtext}"
+                    IsVisible="{Binding NoOpenShift}" />
 
-            <Label
-                Text="{Binding NoShiftMessage}"
-                IsVisible="{Binding NoOpenShift}" />
+                <Border Style="{StaticResource Card}" IsVisible="{Binding IsCounting}">
+                    <VerticalStackLayout Spacing="14">
+                        <Label Text="Cash counted" Style="{StaticResource FieldLabel}" />
+                        <Border Style="{StaticResource FieldFrame}">
+                            <Entry
+                                Text="{Binding CashCounted}"
+                                Placeholder="0.00"
+                                Keyboard="Numeric" />
+                        </Border>
+                        <Button Text="Review" Command="{Binding ReviewCommand}" />
+                    </VerticalStackLayout>
+                </Border>
 
-            <VerticalStackLayout IsVisible="{Binding IsCounting}" Spacing="12">
-                <Label Text="Cash counted" />
-                <Entry
-                    Text="{Binding CashCounted}"
-                    Placeholder="0.00"
-                    Keyboard="Numeric" />
-                <Button Text="Review" Command="{Binding ReviewCommand}" />
+                <Border Style="{StaticResource Card}" IsVisible="{Binding IsReviewing}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="{Binding Reconciliation.ExpectedCash, StringFormat='Expected cash: R{0}'}" Style="{StaticResource Subtext}" />
+                        <Label Text="{Binding Reconciliation.CountedCash, StringFormat='Counted cash: R{0}'}" Style="{StaticResource Subtext}" />
+                        <Label Text="{Binding Reconciliation.Variance, StringFormat='Variance: R{0}'}" Style="{StaticResource AmountDisplay}" />
+                        <Label Text="{Binding ToleranceStatus}" Style="{StaticResource FieldLabel}" />
+                        <Button Text="Confirm Close" Command="{Binding ConfirmCloseCommand}" />
+                        <Button Text="Recount" Command="{Binding RecountCommand}" Style="{StaticResource SecondaryButton}" />
+                    </VerticalStackLayout>
+                </Border>
+
             </VerticalStackLayout>
-
-            <VerticalStackLayout IsVisible="{Binding IsReviewing}" Spacing="12">
-                <Label Text="{Binding Reconciliation.ExpectedCash, StringFormat='Expected cash: R{0}'}" />
-                <Label Text="{Binding Reconciliation.CountedCash, StringFormat='Counted cash: R{0}'}" />
-                <Label Text="{Binding Reconciliation.Variance, StringFormat='Variance: R{0}'}" />
-                <Label Text="{Binding ToleranceStatus}" FontAttributes="Bold" />
-                <Button Text="Confirm Close" Command="{Binding ConfirmCloseCommand}" />
-                <Button Text="Recount" Command="{Binding RecountCommand}" />
-            </VerticalStackLayout>
-
-        </VerticalStackLayout>
-    </ScrollView>
+        </ScrollView>
+    </Grid>
 </ContentPage>

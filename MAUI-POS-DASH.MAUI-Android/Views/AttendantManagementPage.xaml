@@ -10,64 +10,84 @@
     x:DataType="vm:AttendantManagementViewModel"
     Title="Attendants">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="24" Spacing="16">
-            <views:StatusHeaderView />
+    <Grid RowDefinitions="Auto,*">
+        <views:StatusHeaderView Grid.Row="0" />
 
-            <Button Text="Back to terminal home" Command="{Binding GoToHomeCommand}" />
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20,24" Spacing="18">
+                <Label Text="Attendants" Style="{StaticResource PageTitle}" />
 
-            <Label Text="Attendants" FontSize="24" FontAttributes="Bold" />
+                <Label
+                    Text="Managers only — you don't have access to this page."
+                    Style="{StaticResource Subtext}"
+                    IsVisible="{Binding IsUnauthorized}" />
 
-            <VerticalStackLayout IsVisible="{Binding IsUnauthorized}" Spacing="12">
-                <Label Text="Managers only — you don't have access to this page." />
+                <VerticalStackLayout IsVisible="{Binding IsAuthorized}" Spacing="18">
+
+                    <CollectionView ItemsSource="{Binding Attendants}" SelectionMode="None">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="domain:Attendant">
+                                <Border Style="{StaticResource ListRow}">
+                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                                        <VerticalStackLayout Grid.Column="0" VerticalOptions="Center" Spacing="2">
+                                            <Label Text="{Binding Name}" FontFamily="OpenSansSemibold" />
+                                            <Label Text="{Binding Role}" Style="{StaticResource FieldLabel}" />
+                                        </VerticalStackLayout>
+                                        <Button
+                                            Grid.Column="1"
+                                            Text="Edit"
+                                            Style="{StaticResource ListActionButton}"
+                                            Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.EditCommand}"
+                                            CommandParameter="{Binding .}" />
+                                        <Button
+                                            Grid.Column="2"
+                                            Text="Deactivate"
+                                            Style="{StaticResource ListActionButton}"
+                                            Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.DeactivateCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <Border Style="{StaticResource Card}">
+                        <VerticalStackLayout Spacing="14">
+                            <Label Text="{Binding FormTitle}" Style="{StaticResource PageTitle}" FontSize="18" />
+
+                            <Border Style="{StaticResource FieldFrame}">
+                                <Entry Text="{Binding FormName}" Placeholder="Name" />
+                            </Border>
+
+                            <Border Style="{StaticResource FieldFrame}">
+                                <Picker ItemsSource="{Binding Roles}" SelectedItem="{Binding FormRole}" />
+                            </Border>
+
+                            <Border Style="{StaticResource FieldFrame}">
+                                <Entry
+                                    Text="{Binding FormPin}"
+                                    Placeholder="{Binding PinLabel}"
+                                    IsPassword="True"
+                                    MaxLength="6"
+                                    Keyboard="Numeric" />
+                            </Border>
+
+                            <Button Text="Save" Command="{Binding SaveCommand}" />
+                            <Button Text="Cancel" Command="{Binding ResetFormCommand}" Style="{StaticResource SecondaryButton}" IsVisible="{Binding IsEditing}" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                </VerticalStackLayout>
+
+                <Label
+                    Text="{Binding ErrorMessage}"
+                    Style="{StaticResource ErrorLabel}"
+                    IsVisible="{Binding HasError}" />
+
             </VerticalStackLayout>
-
-            <VerticalStackLayout IsVisible="{Binding IsAuthorized}" Spacing="16">
-
-                <CollectionView ItemsSource="{Binding Attendants}" SelectionMode="None">
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate x:DataType="domain:Attendant">
-                            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8" Padding="0,6">
-                                <Label Grid.Column="0" Text="{Binding Name}" VerticalOptions="Center" />
-                                <Label Grid.Column="1" Text="{Binding Role}" VerticalOptions="Center" />
-                                <Button
-                                    Grid.Column="2"
-                                    Text="Edit"
-                                    Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.EditCommand}"
-                                    CommandParameter="{Binding .}" />
-                                <Button
-                                    Grid.Column="3"
-                                    Text="Deactivate"
-                                    Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.DeactivateCommand}"
-                                    CommandParameter="{Binding .}" />
-                            </Grid>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
-
-                <Label Text="{Binding FormTitle}" FontSize="18" FontAttributes="Bold" />
-
-                <Entry Text="{Binding FormName}" Placeholder="Name" />
-
-                <Picker ItemsSource="{Binding Roles}" SelectedItem="{Binding FormRole}" />
-
-                <Entry
-                    Text="{Binding FormPin}"
-                    Placeholder="{Binding PinLabel}"
-                    IsPassword="True"
-                    MaxLength="6"
-                    Keyboard="Numeric" />
-
-                <Button Text="Save" Command="{Binding SaveCommand}" />
-                <Button Text="Cancel" Command="{Binding ResetFormCommand}" IsVisible="{Binding IsEditing}" />
-
-            </VerticalStackLayout>
-
-            <Label
-                Text="{Binding ErrorMessage}"
-                TextColor="Red"
-                IsVisible="{Binding HasError}" />
-
-        </VerticalStackLayout>
-    </ScrollView>
+        </ScrollView>
+    </Grid>
 </ContentPage>
