@@ -44,7 +44,6 @@ Use these names in docs and comments.
   passive.
 - **Naming:** a little personality where it fits (seed/sample data is a reasonable place for
   this) — without undercutting the professional read of the repo.
-- **Commits:** no attribution trailers.
 - **Secrets:** never commit a real connection string, API key, or credential. Local dev defaults
   in `appsettings.Development.json` are throwaway values only — real environments use
   user-secrets or environment variables.
